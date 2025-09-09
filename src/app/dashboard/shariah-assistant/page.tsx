@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ShieldCheck, Lightbulb, Sparkles, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Lightbulb, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -89,6 +89,7 @@ export default function ShariahAssistantPage() {
                 <Sparkles className="ml-2 h-4 w-4" />
               </Button>
             </form>
+          </Form>
         </CardContent>
       </Card>
       
