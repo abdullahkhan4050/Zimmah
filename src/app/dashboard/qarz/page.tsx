@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { BookOpen, CalendarIcon, PlusCircle, FileSignature } from "lucide-react";
 import { format } from "date-fns";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { app } from "@/lib/firebase";
 
 const qarzSchema = z.object({
   debtor: z.string().min(2, "Debtor name is required."),
@@ -35,13 +37,26 @@ export default function QarzPage() {
     }
   });
 
-  function onSubmit(data: z.infer<typeof qarzSchema>) {
-    toast({
-      title: "Qarz Recorded",
-      description: "The debt has been successfully recorded.",
-    });
-    console.log(data);
-    form.reset();
+  async function onSubmit(data: z.infer<typeof qarzSchema>) {
+    try {
+      const db = getFirestore(app);
+      await addDoc(collection(db, "qarz"), {
+        ...data,
+        dueDate: format(data.dueDate, "PPP"),
+      });
+      toast({
+        title: "Qarz Recorded",
+        description: "The debt has been successfully recorded in the database.",
+      });
+      form.reset();
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to record Qarz. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (

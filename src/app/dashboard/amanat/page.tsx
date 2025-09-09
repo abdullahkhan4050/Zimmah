@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { HeartHandshake, CalendarIcon, PlusCircle } from "lucide-react";
 import { format } from "date-fns";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { app } from "@/lib/firebase";
 
 const amanatSchema = z.object({
   item: z.string().min(2, "Item name is required."),
@@ -34,13 +36,26 @@ export default function AmanatPage() {
     }
   });
 
-  function onSubmit(data: z.infer<typeof amanatSchema>) {
-    toast({
-      title: "Amanat Recorded",
-      description: "The entrusted item has been successfully recorded.",
-    });
-    console.log(data);
-    form.reset();
+  async function onSubmit(data: z.infer<typeof amanatSchema>) {
+    try {
+      const db = getFirestore(app);
+      await addDoc(collection(db, "amanat"), {
+        ...data,
+        returnDate: format(data.returnDate, "PPP"),
+      });
+      toast({
+        title: "Amanat Recorded",
+        description: "The entrusted item has been successfully recorded in the database.",
+      });
+      form.reset();
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to record Amanat. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (

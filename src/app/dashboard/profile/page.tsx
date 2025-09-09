@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { app } from "@/lib/firebase";
 
 const profileSchema = z.object({
     fullName: z.string().min(2, "Full name is required"),
@@ -32,12 +34,24 @@ export default function ProfilePage() {
         },
     });
 
-    function onSubmit(values: z.infer<typeof profileSchema>) {
-        console.log(values);
-        toast({
-            title: "Profile Updated",
-            description: "Your personal information has been saved.",
-        })
+    async function onSubmit(values: z.infer<typeof profileSchema>) {
+        try {
+            const db = getFirestore(app);
+            // Assuming you have a 'users' collection and want to save profile data.
+            // In a real app, you would likely use the user's UID as the document ID.
+            await addDoc(collection(db, "users"), values);
+            toast({
+                title: "Profile Updated",
+                description: "Your personal information has been saved.",
+            });
+        } catch (error) {
+            console.error("Error updating profile: ", error);
+            toast({
+                title: "Error",
+                description: "Failed to update profile. Please try again.",
+                variant: "destructive",
+            });
+        }
     }
 
     return (
