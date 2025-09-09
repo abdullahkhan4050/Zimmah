@@ -30,6 +30,7 @@ export default function QarzPage() {
     defaultValues: {
       debtor: "",
       creditor: "",
+      amount: 0,
       witnesses: "",
     }
   });
