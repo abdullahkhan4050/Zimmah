@@ -23,16 +23,21 @@ const profileSchema = z.object({
 
 export default function ProfilePage() {
     const { toast } = useToast();
+    
+    // Placeholder user data
+    const currentUser = {
+        fullName: "Test User",
+        email: "user@example.com",
+        phone: "+92 300 1234567",
+        address: "123 Main St, Islamabad"
+    };
+
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
-        // Pre-fill with user data from your auth/DB
-        defaultValues: {
-            fullName: "Test User",
-            email: "user@example.com",
-            phone: "+92 300 1234567",
-            address: "123 Main St, Islamabad"
-        },
+        defaultValues: currentUser,
     });
+
+    const userInitials = currentUser.fullName.split(' ').map(n => n[0]).join('');
 
     async function onSubmit(values: z.infer<typeof profileSchema>) {
         try {
@@ -65,12 +70,12 @@ export default function ProfilePage() {
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">
-                            <AvatarImage src="https://picsum.photos/100" data-ai-hint="person" />
-                            <AvatarFallback>TU</AvatarFallback>
+                            <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=${currentUser.email}`} alt={currentUser.fullName} />
+                            <AvatarFallback>{userInitials}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-1">
-                            <CardTitle className="text-2xl font-headline">Test User</CardTitle>
-                            <CardDescription>user@example.com</CardDescription>
+                            <CardTitle className="text-2xl font-headline">{currentUser.fullName}</CardTitle>
+                            <CardDescription>{currentUser.email}</CardDescription>
                             <Button size="sm" variant="outline" className="w-fit mt-2">
                                 <Upload className="mr-2 h-4 w-4" /> Change Photo
                             </Button>

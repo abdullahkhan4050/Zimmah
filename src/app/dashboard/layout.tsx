@@ -56,6 +56,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const userName = "Test User";
+  const userEmail = "user@example.com";
+  const userInitials = userName.split(' ').map(n => n[0]).join('');
 
   return (
     <SidebarProvider>
@@ -89,6 +92,7 @@ export default function DashboardLayout({
                     <SidebarMenuButton
                       isActive={pathname === item.href}
                       tooltip={item.label}
+                      className="sidebar-menu-button-creative"
                     >
                       <item.icon />
                       <span>{item.label}</span>
@@ -108,6 +112,7 @@ export default function DashboardLayout({
                     <SidebarMenuButton
                       isActive={pathname === item.href}
                       tooltip={item.label}
+                      className="sidebar-menu-button-creative"
                     >
                       <item.icon />
                       <span>{item.label}</span>
@@ -167,8 +172,8 @@ export default function DashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="rounded-full">
                   <Avatar>
-                    <AvatarImage src="https://picsum.photos/100" alt="@user" data-ai-hint="person" />
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=${userEmail}`} alt={userName} />
+                    <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
                   <span className="sr-only">Toggle user menu</span>
                 </Button>
