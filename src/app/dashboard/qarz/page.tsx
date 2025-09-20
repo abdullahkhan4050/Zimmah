@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { BookOpen, CalendarIcon, PlusCircle, FileSignature } from "lucide-react";
 import { format } from "date-fns";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,13 +41,27 @@ export default function QarzPage() {
   async function onSubmit(data: z.infer<typeof qarzSchema>) {
     try {
       const db = getFirestore(app);
+      const auth = getAuth(app);
+      const user = auth.currentUser;
+
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to record a Qarz.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await addDoc(collection(db, "qarz"), {
         ...data,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
         dueDate: format(data.dueDate, "PPP"),
       });
       toast({
         title: "Qarz Recorded",
-        description: "The debt has been successfully recorded in the database.",
+        description: "The debt has been successfully recorded.",
       });
       form.reset();
     } catch (error) {
@@ -62,7 +77,7 @@ export default function QarzPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
           <BookOpen /> Qarz (Debt) Management
         </h1>
         <p className="text-muted-foreground">Record and track your debts according to Shariah principles.</p>
@@ -75,8 +90,8 @@ export default function QarzPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="debtor"
@@ -105,7 +120,7 @@ export default function QarzPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="amount"
@@ -131,16 +146,16 @@ export default function QarzPage() {
                             <Button
                               variant={"outline"}
                               className={cn(
-                                "w-full pl-3 text-left font-normal",
+                                "w-full justify-start text-left font-normal",
                                 !field.value && "text-muted-foreground"
                               )}
                             >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
                               {field.value ? (
                                 format(field.value, "PPP")
                               ) : (
                                 <span>Pick a date</span>
                               )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>

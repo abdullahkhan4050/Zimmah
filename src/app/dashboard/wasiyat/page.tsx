@@ -53,7 +53,7 @@ export default function WasiyatPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
           <FileText /> Wasiyat (Will) Creation
         </h1>
         <p className="text-muted-foreground">Create your Shariah-compliant will with our AI-powered assistant.</p>
@@ -122,17 +122,14 @@ export default function WasiyatPage() {
                                 This is not a legally binding document. It is a draft generated for review purposes. Consult a qualified Islamic scholar and legal professional before finalizing.
                                 </AlertDescription>
                             </Alert>
-                            <div className="font-body whitespace-pre-wrap p-4 bg-gray-50 rounded-md border text-sm">
+                            <div className="font-body whitespace-pre-wrap p-4 bg-gray-50 rounded-md border text-sm overflow-x-auto">
                                 {willDraft}
                             </div>
                             <Separator />
-                            <div className="flex flex-wrap gap-4 justify-between items-center">
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold">Next Steps</h4>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline"><UserCheck className="mr-2 h-4 w-4" /> Assign Witnesses</Button>
-                                        <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Send for Scholar Review</Button>
-                                    </div>
+                            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-center">
+                                <div className="flex flex-wrap gap-2">
+                                    <Button variant="outline"><UserCheck className="mr-2 h-4 w-4" /> Assign Witnesses</Button>
+                                    <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Send for Scholar Review</Button>
                                 </div>
                                  <Button><Printer className="mr-2 h-4 w-4" /> Print / Save as PDF</Button>
                             </div>

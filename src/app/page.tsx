@@ -55,10 +55,10 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         <header className="flex flex-col items-center text-center">
           <ZimmahLogo className="h-20 w-20 mb-4" />
-          <h1 className="text-3xl font-headline font-bold text-primary">
+          <h1 className="text-3xl md:text-4xl font-headline font-bold text-primary">
             Zimmah Digital Vault
           </h1>
-          <p className="text-muted-foreground mt-2 font-body">
+          <p className="text-muted-foreground mt-2 font-body text-base md:text-lg">
             Secure Shariah-Compliant Will Management System
           </p>
         </header>

@@ -53,7 +53,7 @@ export default function ShariahAssistantPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
           <ShieldCheck /> Shariah Compliance Assistant
         </h1>
         <p className="text-muted-foreground">Get AI-powered tips and reminders to ensure your financial practices are compliant.</p>

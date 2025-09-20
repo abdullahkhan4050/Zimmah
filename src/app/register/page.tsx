@@ -92,7 +92,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-2xl space-y-6">
         <header className="flex flex-col items-center text-center">
           <ZimmahLogo className="h-16 w-16 mb-4" />
-          <h1 className="text-3xl font-headline font-bold text-primary">
+          <h1 className="text-3xl md:text-4xl font-headline font-bold text-primary">
             Create Your Account
           </h1>
           <p className="text-muted-foreground mt-2 font-body">
@@ -177,7 +177,7 @@ export default function RegisterPage() {
                             <FormItem>
                                 <FormLabel>CNIC Upload (Optional)</FormLabel>
                                 <FormControl>
-                                    <Input type="file" className="pt-2" />
+                                    <Input type="file" className="pt-2 text-sm" />
                                 </FormControl>
                                 <FormDescription>Upload a scan of your CNIC.</FormDescription>
                                 <FormMessage />
