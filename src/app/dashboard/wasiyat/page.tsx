@@ -113,14 +113,14 @@ export default function WasiyatPage() {
                             <Sparkles className="text-primary"/>
                             <span className="font-semibold text-base">Write with AI</span>
                            </div>
-                           <p className="font-normal text-sm text-muted-foreground">Describe your wishes and let our AI generate a draft for you.</p>
+                           <p className="font-normal text-sm text-muted-foreground">Let our AI generate a draft for you.</p>
                         </Button>
                         <Button variant="outline" size="lg" className="h-20 flex-col items-start p-4 gap-1" onClick={() => { setWriteMode('manual'); setWillDraft(null); }}>
                            <div className="flex items-center gap-2">
                             <Edit className="text-primary"/>
                             <span className="font-semibold text-base">Write Manually</span>
                            </div>
-                           <p className="font-normal text-sm text-muted-foreground">Draft your will by hand using our text editor.</p>
+                           <p className="font-normal text-sm text-muted-foreground">Draft your will using our text editor.</p>
                         </Button>
                     </CardContent>
                 </Card>
