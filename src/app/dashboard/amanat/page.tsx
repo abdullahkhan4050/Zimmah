@@ -122,7 +122,7 @@ export default function AmanatPage() {
                       control={form.control}
                       name="returnDate"
                       render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem className="flex flex-col justify-end">
                           <FormLabel>Expected Return Date</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
