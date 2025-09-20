@@ -155,7 +155,7 @@ export default function ShariahAssistantPage() {
                   <Sparkles className="text-primary"/>
                   <span className="font-semibold text-base">AI Assistant</span>
                 </div>
-                <p className="font-normal text-sm text-muted-foreground text-left">Get an immediate, AI-powered analysis of your financial query.</p>
+                <p className="font-normal text-sm text-muted-foreground text-left">Get immediate AI-powered analysis.</p>
               </Button>
               <Button variant="outline" size="lg" className="h-32 flex-col items-start p-4 gap-2" onClick={() => setAssistanceMode('lawyer')}>
                 <div className="flex items-center gap-2">
