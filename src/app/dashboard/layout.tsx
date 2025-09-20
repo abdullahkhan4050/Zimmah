@@ -26,7 +26,6 @@ import {
   SidebarInset,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { ZimmahLogo } from "@/components/icons";
 import { Button } from "@/components/ui/button";
