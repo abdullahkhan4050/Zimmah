@@ -169,7 +169,7 @@ export default function ShariahAssistantPage() {
                   <GraduationCap className="text-primary"/>
                   <span className="font-semibold text-base">Scholar</span>
                 </div>
-                <p className="font-normal text-sm text-muted-foreground text-left">Seek guidance from a respected Shariah scholar for in-depth rulings.</p>
+                <p className="font-normal text-sm text-muted-foreground text-left">Seek guidance from a Shariah scholar.</p>
               </Button>
             </CardContent>
           </Card>
