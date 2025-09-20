@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangle } from "lucide-react";
+import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangle, Edit, Save } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,24 +15,33 @@ import { useToast } from "@/hooks/use-toast";
 import { generateWillAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { app } from "@/lib/firebase";
 
 const wasiyatSchema = z.object({
   prompt: z.string().min(50, "Please provide a detailed description of your wishes (at least 50 characters)."),
 });
 
+const manualWasiyatSchema = z.object({
+    manualWill: z.string().min(1, "Will content cannot be empty."),
+});
+
+type WriteMode = "ai" | "manual" | null;
+
 export default function WasiyatPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [willDraft, setWillDraft] = useState<string | null>(null);
+  const [writeMode, setWriteMode] = useState<WriteMode>(null);
+  const [manualWill, setManualWill] = useState("");
 
-  const form = useForm<z.infer<typeof wasiyatSchema>>({
+  const aiForm = useForm<z.infer<typeof wasiyatSchema>>({
     resolver: zodResolver(wasiyatSchema),
     defaultValues: {
         prompt: ""
     }
   });
 
-  function onSubmit(data: z.infer<typeof wasiyatSchema>) {
+  async function onAiSubmit(data: z.infer<typeof wasiyatSchema>) {
     startTransition(async () => {
         const result = await generateWillAction(data);
         if(result.success && result.data) {
@@ -50,50 +60,131 @@ export default function WasiyatPage() {
     });
   }
 
+  async function handleManualSave() {
+    if (!manualWill) {
+      toast({
+        title: "Error",
+        description: "Will content cannot be empty.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const db = getFirestore(app);
+      await addDoc(collection(db, "wasiyat"), {
+        will: manualWill,
+        type: 'manual',
+        createdAt: serverTimestamp(),
+      });
+      toast({
+        title: "Will Saved",
+        description: "Your manually created will has been saved.",
+      });
+       setWillDraft(manualWill); // Show the saved will in the draft view
+    } catch (error) {
+      console.error("Error saving manual will: ", error);
+      toast({
+        title: "Error",
+        description: "Failed to save your will. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
           <FileText /> Wasiyat (Will) Creation
         </h1>
-        <p className="text-muted-foreground">Create your Shariah-compliant will with our AI-powered assistant.</p>
+        <p className="text-muted-foreground">Create your Shariah-compliant will with our assistant.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 flex flex-col gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="text-primary"/> AI Will Assistant
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <FormField
-                                control={form.control}
-                                name="prompt"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Describe Your Wishes</FormLabel>
-                                    <FormControl>
-                                    <Textarea
-                                        placeholder="Describe your beneficiaries, assets, and any specific instructions. For example: 'I want to leave my house at 123 Main St to my son, Ahmed. My savings of $10,000 should be split equally between my two daughters, Fatima and Aisha. I also want to donate 10% of my remaining assets to the local mosque...'"
-                                        className="min-h-[200px]"
-                                        {...field}
-                                    />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <Button type="submit" className="w-full" disabled={isPending}>
-                                {isPending ? "Generating..." : "Generate Will Draft"}
-                            </Button>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
+            {!writeMode && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>How would you like to create your will?</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 gap-4">
+                        <Button variant="outline" size="lg" className="h-20 flex-col items-start p-4 gap-1" onClick={() => setWriteMode('ai')}>
+                           <div className="flex items-center gap-2">
+                            <Sparkles className="text-primary"/>
+                            <span className="font-semibold text-base">Write with AI</span>
+                           </div>
+                           <p className="font-normal text-sm text-muted-foreground">Describe your wishes and let our AI generate a draft for you.</p>
+                        </Button>
+                        <Button variant="outline" size="lg" className="h-20 flex-col items-start p-4 gap-1" onClick={() => { setWriteMode('manual'); setWillDraft(null); }}>
+                           <div className="flex items-center gap-2">
+                            <Edit className="text-primary"/>
+                            <span className="font-semibold text-base">Write Manually</span>
+                           </div>
+                           <p className="font-normal text-sm text-muted-foreground">Draft your will by hand using our text editor.</p>
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            {writeMode === 'ai' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Sparkles className="text-primary"/> AI Will Assistant
+                        </CardTitle>
+                        <Button variant="link" className="p-0 h-auto justify-start" onClick={() => setWriteMode(null)}>&larr; Back to options</Button>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...aiForm}>
+                            <form onSubmit={aiForm.handleSubmit(onAiSubmit)} className="space-y-6">
+                                <FormField
+                                    control={aiForm.control}
+                                    name="prompt"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Describe Your Wishes</FormLabel>
+                                        <FormControl>
+                                        <Textarea
+                                            placeholder="Describe your beneficiaries, assets, and any specific instructions. For example: 'I want to leave my house at 123 Main St to my son, Ahmed. My savings of $10,000 should be split equally between my two daughters, Fatima and Aisha. I also want to donate 10% of my remaining assets to the local mosque...'"
+                                            className="min-h-[200px]"
+                                            {...field}
+                                        />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" className="w-full" disabled={isPending}>
+                                    {isPending ? "Generating..." : "Generate Will Draft"}
+                                </Button>
+                            </form>
+                        </Form>
+                    </CardContent>
+                </Card>
+            )}
+
+            {writeMode === 'manual' && (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Edit className="text-primary"/> Manual Will Editor
+                        </CardTitle>
+                         <Button variant="link" className="p-0 h-auto justify-start" onClick={() => setWriteMode(null)}>&larr; Back to options</Button>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Textarea
+                            placeholder="Start writing your will here..."
+                            className="min-h-[300px] font-body"
+                            value={manualWill}
+                            onChange={(e) => setManualWill(e.target.value)}
+                        />
+                         <Button className="w-full" onClick={handleManualSave}>
+                            <Save className="mr-2 h-4 w-4" />
+                            Save Will
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
 
             <Alert>
                 <Lightbulb className="h-4 w-4" />
@@ -105,16 +196,24 @@ export default function WasiyatPage() {
         </div>
 
         <div className="lg:col-span-2">
-            <Card className="min-h-[600px]">
+            <Card className="min-h-[600px] flex flex-col">
                 <CardHeader>
                     <CardTitle>Generated Will Draft</CardTitle>
-                    <CardDescription>This is an AI-generated draft. Please review it carefully and consult with a scholar.</CardDescription>
+                    <CardDescription>This is a draft for review. Please consult with a scholar before finalizing.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    {isPending && <div className="text-center p-8">Generating your will draft... <Sparkles className="inline-block animate-pulse" /></div>}
-                    {!isPending && !willDraft && <div className="text-center p-8 text-muted-foreground">Your generated will draft will appear here.</div>}
+                <CardContent className="flex-1 flex flex-col">
+                    {isPending && <div className="text-center p-8 m-auto">Generating your will draft... <Sparkles className="inline-block animate-pulse" /></div>}
+                    
+                    {!isPending && !willDraft && (
+                        <div className="m-auto text-center p-8 text-muted-foreground">
+                            {writeMode === 'ai' && "Your AI-generated will draft will appear here."}
+                            {writeMode === 'manual' && "Your manually saved will will appear here after saving."}
+                            {!writeMode && "Choose an option to start creating your will."}
+                        </div>
+                    )}
+
                     {willDraft && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 flex-1 flex flex-col">
                              <Alert variant="destructive">
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle>Disclaimer</AlertTitle>
@@ -122,7 +221,7 @@ export default function WasiyatPage() {
                                 This is not a legally binding document. It is a draft generated for review purposes. Consult a qualified Islamic scholar and legal professional before finalizing.
                                 </AlertDescription>
                             </Alert>
-                            <div className="font-body whitespace-pre-wrap p-4 bg-gray-50 rounded-md border text-sm overflow-x-auto">
+                            <div className="font-body whitespace-pre-wrap p-6 bg-muted/50 rounded-md border text-sm overflow-x-auto flex-1">
                                 {willDraft}
                             </div>
                             <Separator />
