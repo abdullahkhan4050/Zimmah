@@ -41,9 +41,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 const vaultItems = [
+  { href: "/dashboard/wasiyat", label: "Wasiyat (Wills)", icon: FileText },
   { href: "/dashboard/qarz", label: "Qarz (Debts)", icon: BookOpen },
   { href: "/dashboard/amanat", label: "Amanat (Trusts)", icon: HeartHandshake },
-  { href: "/dashboard/wasiyat", label: "Wasiyat (Wills)", icon: FileText },
 ];
 
 const toolsItems = [

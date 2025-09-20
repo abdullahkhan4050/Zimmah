@@ -41,6 +41,12 @@ export default function DashboardPage() {
                 <CardDescription>Start a new record.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
+                 <Link href="/dashboard/wasiyat">
+                    <Button variant="outline" className="w-full justify-start gap-4">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span>Create/Edit Will (Wasiyat)</span>
+                    </Button>
+                </Link>
                 <Link href="/dashboard/qarz">
                     <Button variant="outline" className="w-full justify-start gap-4">
                         <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -51,12 +57,6 @@ export default function DashboardPage() {
                     <Button variant="outline" className="w-full justify-start gap-4">
                         <HeartHandshake className="h-4 w-4 text-muted-foreground" />
                         <span>Add New Trust (Amanat)</span>
-                    </Button>
-                </Link>
-                 <Link href="/dashboard/wasiyat">
-                    <Button variant="outline" className="w-full justify-start gap-4">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span>Create/Edit Will (Wasiyat)</span>
                     </Button>
                 </Link>
             </CardContent>
