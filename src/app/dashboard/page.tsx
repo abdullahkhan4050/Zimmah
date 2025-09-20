@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function DashboardPage() {
+export default function DashboardPage({ params }: { params: {} }) {
   return (
     <div className="flex flex-col gap-6">
       <header>
