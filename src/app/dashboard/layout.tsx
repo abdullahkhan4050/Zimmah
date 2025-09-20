@@ -24,6 +24,9 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { ZimmahLogo } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -38,12 +41,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
-const menuItems = [
-  { href: "/dashboard", label: "Home", icon: Home },
+const vaultItems = [
   { href: "/dashboard/qarz", label: "Qarz (Debts)", icon: BookOpen },
   { href: "/dashboard/amanat", label: "Amanat (Trusts)", icon: HeartHandshake },
   { href: "/dashboard/wasiyat", label: "Wasiyat (Wills)", icon: FileText },
-  { href: "/dashboard/shariah-assistant", label: "Shariah Assistant", icon: ShieldCheck },
+];
+
+const toolsItems = [
+    { href: "/dashboard/shariah-assistant", label: "Shariah Assistant", icon: ShieldCheck },
 ];
 
 export default function DashboardLayout({
@@ -65,21 +70,55 @@ export default function DashboardLayout({
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {menuItems.map((item) => (
-              <SidebarMenuItem key={item.label}>
-                <Link href={item.href}>
-                  <SidebarMenuButton
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+           <SidebarMenu>
+                 <SidebarMenuItem>
+                    <Link href="/dashboard">
+                        <SidebarMenuButton isActive={pathname === '/dashboard'} tooltip="Home">
+                            <Home />
+                            <span>Home</span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+            </SidebarMenu>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Vault</SidebarGroupLabel>
+            <SidebarMenu>
+              {vaultItems.map((item) => (
+                <SidebarMenuItem key={item.label}>
+                  <Link href={item.href}>
+                    <SidebarMenuButton
+                      isActive={pathname === item.href}
+                      tooltip={item.label}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+          
+           <SidebarGroup>
+            <SidebarGroupLabel>Tools</SidebarGroupLabel>
+            <SidebarMenu>
+              {toolsItems.map((item) => (
+                <SidebarMenuItem key={item.label}>
+                  <Link href={item.href}>
+                    <SidebarMenuButton
+                      isActive={pathname === item.href}
+                      tooltip={item.label}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
