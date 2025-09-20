@@ -113,7 +113,7 @@ export default function DashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="relative">
                   <Bell className="h-4 w-4" />
-                   <Badge className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 p-2 text-xs text-white">3</Badge>
+                   <Badge className="absolute -bottom-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 p-2 text-xs text-white">3</Badge>
                   <span className="sr-only">Toggle notifications</span>
                 </Button>
               </DropdownMenuTrigger>
