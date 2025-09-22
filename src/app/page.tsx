@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -52,18 +53,18 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-green-100 via-blue-50 to-orange-50 p-4">
-      <div className="w-full max-w-md space-y-6">
-        <header className="flex flex-col items-center text-center">
-          <ZimmahLogo className="h-20 w-20 mb-4" />
-          <h1 className="text-3xl md:text-4xl font-headline font-bold text-primary">
-            Zimmah Digital Vault
+      <div className="flex w-full max-w-4xl flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+        <header className="flex flex-col items-center text-center md:items-start md:text-left w-full max-w-md">
+          <ZimmahLogo className="h-28 w-28 mb-4" />
+          <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary">
+            Zimmah
           </h1>
-          <p className="text-muted-foreground mt-2 font-body text-base md:text-lg">
-            Secure Shariah-Compliant Will Management System
+           <p className="text-muted-foreground mt-2 font-body text-lg md:text-xl">
+            Your Digital Vault for Shariah-Compliant Assets
           </p>
         </header>
 
-        <main>
+        <main className="w-full max-w-md">
           {!selectedRole ? (
             <Card>
               <CardHeader>
