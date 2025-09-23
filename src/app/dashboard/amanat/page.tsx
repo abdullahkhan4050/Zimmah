@@ -96,7 +96,7 @@ export default function AmanatPage() {
                     <FormItem>
                       <FormLabel>Item Description</FormLabel>
                        <FormControl>
-                         <Textarea placeholder="e.g., Macbook Pro 16-inch, M1 Pro, Silver. Kept for safekeeping." {...field} />
+                         <Textarea placeholder="e.g., 50,000 PKR and 1 tola of gold kept for safekeeping." {...field} />
                        </FormControl>
                       <FormMessage />
                     </FormItem>
