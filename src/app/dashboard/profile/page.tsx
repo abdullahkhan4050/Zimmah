@@ -1,10 +1,11 @@
+
 "use client"
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { getFirestore, collection, doc, getDocs, updateDoc, query, limit } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef }from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ const profileSchema = z.object({
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Phone number is required"),
     address: z.string().min(5, "Address is required"),
+    avatar: z.string().optional(),
 });
 
 type ProfileData = z.infer<typeof profileSchema>;
@@ -28,14 +30,17 @@ export default function ProfilePage() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [profileId, setProfileId] = useState<string | null>(null);
-    
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const form = useForm<ProfileData>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
             fullName: "",
             email: "",
             phone: "",
-            address: ""
+            address: "",
+            avatar: "",
         },
     });
 
@@ -53,6 +58,9 @@ export default function ProfilePage() {
                     const userData = userDoc.data() as ProfileData;
                     form.reset(userData);
                     setProfileId(userDoc.id);
+                    if (userData.avatar) {
+                      setAvatarPreview(userData.avatar);
+                    }
                 } else {
                     // Fallback to placeholder if no user exists
                     form.reset({
@@ -76,6 +84,18 @@ export default function ProfilePage() {
         fetchProfile();
     }, [form, toast]);
 
+    const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                setAvatarPreview(result);
+                form.setValue("avatar", result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     async function onSubmit(values: ProfileData) {
         if (!profileId) {
@@ -90,6 +110,8 @@ export default function ProfilePage() {
         try {
             const db = getFirestore(app);
             const userDocRef = doc(db, "users", profileId);
+            // In a real app, you would upload the image to Firebase Storage and save the URL.
+            // For this demo, we're saving the base64 string.
             await updateDoc(userDocRef, values);
             toast({
                 title: "Profile Updated",
@@ -128,13 +150,20 @@ export default function ProfilePage() {
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">
-                            <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=${currentUser.email}`} alt={currentUser.fullName} />
+                            <AvatarImage src={avatarPreview || `https://api.dicebear.com/8.x/initials/svg?seed=${currentUser.email}`} alt={currentUser.fullName} />
                             <AvatarFallback>{userInitials}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-1">
                             <CardTitle className="text-2xl font-headline text-primary">{currentUser.fullName}</CardTitle>
                             <CardDescription>{currentUser.email}</CardDescription>
-                            <Button size="sm" variant="outline" className="w-fit mt-2">
+                             <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleAvatarChange}
+                                className="hidden"
+                                accept="image/*"
+                            />
+                            <Button size="sm" variant="outline" className="w-fit mt-2" onClick={() => fileInputRef.current?.click()}>
                                 <Upload className="mr-2 h-4 w-4" /> Change Photo
                             </Button>
                         </div>
