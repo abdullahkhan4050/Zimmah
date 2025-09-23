@@ -24,39 +24,39 @@ export default function DashboardPage({ params }: { params: any }) {
         <p className="text-muted-foreground">Welcome back, {userName}!</p>
       </header>
       
-      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-2">
+      <section className="grid gap-6 md:grid-cols-5">
+        <Card className="md:col-span-3 border-2 flex flex-col">
             <CardHeader>
                 <CardTitle className="text-primary">Your Digital Vault</CardTitle>
                 <CardDescription>You have no items yet. Get started by adding a new record.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4">
+            <CardContent className="flex-grow flex">
+                <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4">
                     <p className="text-muted-foreground">No activity to display.</p>
                 </div>
             </CardContent>
         </Card>
-        <Card className="lg:col-span-3 border-2">
+        <Card className="md:col-span-2 border-2 flex flex-col">
              <CardHeader>
                 <CardTitle className="text-primary">Quick Actions</CardTitle>
                 <CardDescription>Start a new record.</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4">
+            <CardContent className="flex-grow grid content-start gap-4">
                  <Link href="/dashboard/wasiyat">
-                    <Button variant="outline" className="w-full justify-start gap-4">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                    <Button variant="outline" className="w-full justify-start gap-4 py-6">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
                         <span>Create/Edit Will (Wasiyat)</span>
                     </Button>
                 </Link>
                 <Link href="/dashboard/qarz">
-                    <Button variant="outline" className="w-full justify-start gap-4">
-                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <Button variant="outline" className="w-full justify-start gap-4 py-6">
+                        <BookOpen className="h-5 w-5 text-muted-foreground" />
                         <span>Add New Debt (Qarz)</span>
                     </Button>
                 </Link>
                  <Link href="/dashboard/amanat">
-                    <Button variant="outline" className="w-full justify-start gap-4">
-                        <HeartHandshake className="h-4 w-4 text-muted-foreground" />
+                    <Button variant="outline" className="w-full justify-start gap-4 py-6">
+                        <HeartHandshake className="h-5 w-5 text-muted-foreground" />
                         <span>Add New Trust (Amanat)</span>
                     </Button>
                 </Link>
