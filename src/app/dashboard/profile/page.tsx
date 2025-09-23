@@ -66,7 +66,7 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground">Manage your personal information and settings.</p>
             </header>
 
-            <Card>
+            <Card className="border-2">
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">

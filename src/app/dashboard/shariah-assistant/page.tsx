@@ -60,7 +60,7 @@ export default function ShariahAssistantPage() {
       case 'ai':
         return (
           <>
-            <Card>
+            <Card className="border-2">
               <CardHeader>
                 <CardTitle className="text-primary">Evaluate a Financial Practice</CardTitle>
                 <CardDescription>Describe a financial scenario or practice below, and our AI assistant will provide guidance.</CardDescription>
@@ -98,7 +98,7 @@ export default function ShariahAssistantPage() {
             {isPending && <div className="text-center p-8 text-muted-foreground">Analyzing your query...</div>}
 
             {complianceResult && (
-              <Card className="mt-6 animate-in fade-in-50">
+              <Card className="mt-6 animate-in fade-in-50 border-2">
                   <CardHeader>
                       <CardTitle className="text-primary">AI Compliance Analysis</CardTitle>
                        <div className="flex items-center gap-2 pt-2">
@@ -127,7 +127,7 @@ export default function ShariahAssistantPage() {
       case 'lawyer':
       case 'scholar':
         return (
-            <Card>
+            <Card className="border-2">
                 <CardHeader>
                     <CardTitle className="text-primary">Coming Soon</CardTitle>
                     <CardDescription>
@@ -144,7 +144,7 @@ export default function ShariahAssistantPage() {
         );
       default:
         return (
-          <Card>
+          <Card className="border-2">
             <CardHeader>
               <CardTitle className="text-primary">Choose Your Assistance Type</CardTitle>
               <CardDescription>Select how you would like to get Shariah compliance assistance.</CardDescription>

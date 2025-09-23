@@ -103,7 +103,7 @@ export default function WasiyatPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 flex flex-col gap-6">
             {!writeMode && (
-                <Card>
+                <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="text-primary">How would you like to create your will?</CardTitle>
                     </CardHeader>
@@ -127,7 +127,7 @@ export default function WasiyatPage() {
             )}
 
             {writeMode === 'ai' && (
-                <Card>
+                <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
                             <Sparkles className="text-primary"/> AI Will Assistant
@@ -164,7 +164,7 @@ export default function WasiyatPage() {
             )}
 
             {writeMode === 'manual' && (
-                 <Card>
+                 <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
                             <Edit className="text-primary"/> Manual Will Editor
@@ -196,7 +196,7 @@ export default function WasiyatPage() {
         </div>
 
         <div className="lg:col-span-2">
-            <Card className="min-h-[600px] flex flex-col">
+            <Card className="min-h-[600px] flex flex-col border-2">
                 <CardHeader>
                     <CardTitle className="text-primary">Generated Will Draft</CardTitle>
                     <CardDescription>This is a draft for review. Please consult with a scholar before finalizing.</CardDescription>

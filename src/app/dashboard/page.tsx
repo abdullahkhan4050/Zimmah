@@ -25,7 +25,7 @@ export default function DashboardPage({ params }: { params: any }) {
       </header>
       
       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-4 border-2">
             <CardHeader>
                 <CardTitle className="text-primary">Your Digital Vault</CardTitle>
                 <CardDescription>You have no items yet. Get started by adding a new record.</CardDescription>
@@ -36,7 +36,7 @@ export default function DashboardPage({ params }: { params: any }) {
                 </div>
             </CardContent>
         </Card>
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-3 border-2">
              <CardHeader>
                 <CardTitle className="text-primary">Quick Actions</CardTitle>
                 <CardDescription>Start a new record.</CardDescription>

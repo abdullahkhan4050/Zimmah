@@ -67,7 +67,7 @@ export default function AmanatPage() {
         <p className="text-muted-foreground">Keep track of items you have entrusted to others.</p>
       </header>
 
-      <Card>
+      <Card className="border-2">
         <CardHeader>
           <CardTitle className="text-primary">Record a New Entrusted Item</CardTitle>
           <CardDescription>Fill in the details below to add a new Amanat record.</CardDescription>

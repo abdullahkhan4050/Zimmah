@@ -110,7 +110,7 @@ export default function QarzPage() {
         <p className="text-muted-foreground">Record and track your debts according to Shariah principles.</p>
       </header>
 
-      <Card>
+      <Card className="border-2">
         <CardHeader>
           <CardTitle className="text-primary">Record a New Debt</CardTitle>
           <CardDescription>Fill in the details below to add a new debt record.</CardDescription>
@@ -265,7 +265,7 @@ export default function QarzPage() {
               />
               
               {watchAddWitnesses && (
-                <Card className="p-4">
+                <Card className="p-4 border-2">
                   <CardHeader className="p-2">
                     <CardTitle className="text-lg text-primary">Witness Details</CardTitle>
                   </CardHeader>
