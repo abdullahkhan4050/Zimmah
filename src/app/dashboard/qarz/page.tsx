@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -23,6 +22,7 @@ const qarzSchema = z.object({
   debtor: z.string().min(2, "Debtor name is required."),
   creditor: z.string().min(2, "Creditor name is required."),
   amount: z.coerce.number().positive("Amount must be positive."),
+  startDate: z.date({ required_error: "Start date is required." }),
   dueDate: z.date({ required_error: "Due date is required." }),
   witnesses: z.string().optional(),
 });
@@ -58,6 +58,7 @@ export default function QarzPage() {
         ...data,
         userId: user.uid,
         createdAt: serverTimestamp(),
+        startDate: format(data.startDate, "PPP"),
         dueDate: format(data.dueDate, "PPP"),
       });
       toast({
@@ -121,8 +122,7 @@ export default function QarzPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
+               <FormField
                   control={form.control}
                   name="amount"
                   render={({ field }) => (
@@ -131,6 +131,46 @@ export default function QarzPage() {
                       <FormControl>
                         <Input type="number" placeholder="e.g., 1000" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Start Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -165,7 +205,10 @@ export default function QarzPage() {
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
+                            disabled={(date) => {
+                              const startDate = form.getValues("startDate");
+                              return startDate ? date < startDate : date < new Date();
+                            }}
                             initialFocus
                           />
                         </PopoverContent>
