@@ -59,6 +59,7 @@ export default function DashboardLayout({
   const userName = "Test User";
   const userEmail = "user@example.com";
   const userInitials = userName.split(' ').map(n => n[0]).join('');
+  const notificationCount = 0;
 
   return (
     <SidebarProvider>
@@ -156,16 +157,26 @@ export default function DashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="relative">
                   <Bell className="h-4 w-4" />
-                   <Badge className="absolute -bottom-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 p-2 text-xs text-white">3</Badge>
+                  {notificationCount > 0 && (
+                    <Badge className="absolute -bottom-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 p-2 text-xs text-white">
+                      {notificationCount}
+                    </Badge>
+                  )}
                   <span className="sr-only">Toggle notifications</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Your Qarz record is due soon.</DropdownMenuItem>
-                <DropdownMenuItem>Wasiyat draft requires witness.</DropdownMenuItem>
-                <DropdownMenuItem>New Shariah tip available.</DropdownMenuItem>
+                {notificationCount > 0 ? (
+                  <>
+                    <DropdownMenuItem>Your Qarz record is due soon.</DropdownMenuItem>
+                    <DropdownMenuItem>Wasiyat draft requires witness.</DropdownMenuItem>
+                    <DropdownMenuItem>New Shariah tip available.</DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem>No new notifications.</DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenu>
