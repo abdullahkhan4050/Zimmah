@@ -1,3 +1,4 @@
+
 import {
   FileText,
   BookOpen,
@@ -13,8 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function DashboardPage({ params }: { params: { slug: string }}) {
-    const userName = "User";
+export default function DashboardPage() {
+    const userName = "Test User";
   return (
     <div className="flex flex-col gap-6">
       <header>
