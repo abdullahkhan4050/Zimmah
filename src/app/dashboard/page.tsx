@@ -13,14 +13,15 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function DashboardPage({ params }: { params: {} }) {
+export default function DashboardPage() {
+    const userName = "Test User";
   return (
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight">
           Dashboard
         </h1>
-        <p className="text-muted-foreground">Welcome back, User!</p>
+        <p className="text-muted-foreground">Welcome back, {userName}!</p>
       </header>
       
       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
