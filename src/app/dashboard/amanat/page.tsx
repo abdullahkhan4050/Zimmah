@@ -1,9 +1,10 @@
+
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { HeartHandshake, CalendarIcon, PlusCircle } from "lucide-react";
+import { HeartHandshake, CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 
@@ -17,12 +18,22 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { app } from "@/lib/firebase";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+
+const witnessSchema = z.object({
+  name: z.string().min(2, "Witness name is required."),
+  cnic: z.string().optional(),
+  email: z.string().email("Invalid email.").optional().or(z.literal("")),
+});
 
 const amanatSchema = z.object({
   item: z.string().min(2, "Item name is required."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(200),
   entrustee: z.string().min(2, "Entrustee name is required."),
   returnDate: z.date({ required_error: "Expected return date is required." }),
+  addWitnesses: z.boolean().default(false),
+  witnesses: z.array(witnessSchema).max(3, "You can add a maximum of 3 witnesses."),
 });
 
 export default function AmanatPage() {
@@ -33,16 +44,31 @@ export default function AmanatPage() {
       item: "",
       description: "",
       entrustee: "",
+      addWitnesses: false,
+      witnesses: [],
     }
   });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "witnesses",
+  });
+
+  const watchAddWitnesses = form.watch("addWitnesses");
 
   async function onSubmit(data: z.infer<typeof amanatSchema>) {
     try {
       const db = getFirestore(app);
-      await addDoc(collection(db, "amanat"), {
+      const amanatData: any = {
         ...data,
         returnDate: format(data.returnDate, "PPP"),
-      });
+      };
+
+      if (!data.addWitnesses) {
+        delete amanatData.witnesses;
+      }
+
+      await addDoc(collection(db, "amanat"), amanatData);
       toast({
         title: "Amanat Recorded",
         description: "The entrusted item has been successfully recorded in the database.",
@@ -159,6 +185,99 @@ export default function AmanatPage() {
                     />
                 </div>
               
+                <FormField
+                control={form.control}
+                name="addWitnesses"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Do you want to add witnesses?
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              
+              {watchAddWitnesses && (
+                <Card className="p-4 border-2">
+                  <CardHeader className="p-2">
+                    <CardTitle className="text-lg text-primary">Witness Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 p-2">
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="p-4 border rounded-lg relative">
+                        <h4 className="font-semibold mb-2">Witness {index + 1}</h4>
+                        <Separator className="mb-4" />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`witnesses.${index}.name`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Name (Mandatory)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., Bilal Ahmed" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`witnesses.${index}.cnic`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CNIC (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 42201-1234567-1" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`witnesses.${index}.email`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., witness@example.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => remove(index)}>
+                          <Trash2 className="text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                     <FormMessage>{form.formState.errors.witnesses?.root?.message}</FormMessage>
+
+                    {fields.length < 3 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => append({ name: "", cnic: "", email: "" })}
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Witness
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+
               <div className="flex justify-end">
                 <Button type="submit">
                   <PlusCircle className="mr-2 h-4 w-4" />
