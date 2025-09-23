@@ -111,7 +111,7 @@ export default function QarzPage() {
                   name="creditor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Creditor (The one who is owed)</FormLabel>
+                      <FormLabel>Creditor (Qarz denay wala)</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g., Jane Smith" {...field} />
                       </FormControl>
