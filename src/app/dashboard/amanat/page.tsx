@@ -82,7 +82,7 @@ export default function AmanatPage() {
                     <FormItem>
                       <FormLabel>Item Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Laptop, Gold Jewelry" {...field} />
+                        <Input placeholder="e.g., cash/gold" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
