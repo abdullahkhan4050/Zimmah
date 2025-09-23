@@ -1,6 +1,6 @@
 import {
-  BookOpen,
   FileText,
+  BookOpen,
   HeartHandshake,
 } from "lucide-react";
 import Link from "next/link";
@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function DashboardPage() {
-    const userName = "Test User";
+export default function DashboardPage({ params }: { params: { slug: string }}) {
+    const userName = "User";
   return (
     <div className="flex flex-col gap-6">
       <header>
