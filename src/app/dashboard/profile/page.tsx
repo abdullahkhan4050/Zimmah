@@ -3,14 +3,15 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import { getFirestore, collection, doc, getDocs, updateDoc, query, limit } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Upload, Save } from "lucide-react";
+import { Upload, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { app } from "@/lib/firebase";
 
@@ -21,30 +22,75 @@ const profileSchema = z.object({
     address: z.string().min(5, "Address is required"),
 });
 
+type ProfileData = z.infer<typeof profileSchema>;
+
 export default function ProfilePage() {
     const { toast } = useToast();
+    const [loading, setLoading] = useState(true);
+    const [profileId, setProfileId] = useState<string | null>(null);
     
-    // Placeholder user data
-    const currentUser = {
-        fullName: "Bilal Khan",
-        email: "bilal.khan@example.com",
-        phone: "+92 300 1234567",
-        address: "123 Main St, Islamabad"
-    };
-
-    const form = useForm<z.infer<typeof profileSchema>>({
+    const form = useForm<ProfileData>({
         resolver: zodResolver(profileSchema),
-        defaultValues: currentUser,
+        defaultValues: {
+            fullName: "",
+            email: "",
+            phone: "",
+            address: ""
+        },
     });
 
-    const userInitials = currentUser.fullName.split(' ').map(n => n[0]).join('');
+    useEffect(() => {
+        async function fetchProfile() {
+            try {
+                const db = getFirestore(app);
+                // In a real app, you would fetch the user's profile based on their UID.
+                // For this example, we'll fetch the first user profile we find.
+                const q = query(collection(db, "users"), limit(1));
+                const querySnapshot = await getDocs(q);
 
-    async function onSubmit(values: z.infer<typeof profileSchema>) {
+                if (!querySnapshot.empty) {
+                    const userDoc = querySnapshot.docs[0];
+                    const userData = userDoc.data() as ProfileData;
+                    form.reset(userData);
+                    setProfileId(userDoc.id);
+                } else {
+                    // Fallback to placeholder if no user exists
+                    form.reset({
+                        fullName: "Bilal Khan",
+                        email: "bilal.khan@example.com",
+                        phone: "+92 300 1234567",
+                        address: "123 Main St, Islamabad"
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+                toast({
+                    title: "Error",
+                    description: "Failed to load profile data.",
+                    variant: "destructive",
+                });
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchProfile();
+    }, [form, toast]);
+
+
+    async function onSubmit(values: ProfileData) {
+        if (!profileId) {
+            toast({
+                title: "Error",
+                description: "No user profile found to update. You might need to create one first.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         try {
             const db = getFirestore(app);
-            // Assuming you have a 'users' collection and want to save profile data.
-            // In a real app, you would likely use the user's UID as the document ID.
-            await addDoc(collection(db, "users"), values);
+            const userDocRef = doc(db, "users", profileId);
+            await updateDoc(userDocRef, values);
             toast({
                 title: "Profile Updated",
                 description: "Your personal information has been saved.",
@@ -57,6 +103,18 @@ export default function ProfilePage() {
                 variant: "destructive",
             });
         }
+    }
+    
+    const currentUser = form.watch();
+    const userInitials = currentUser.fullName ? currentUser.fullName.split(' ').map(n => n[0]).join('') : '';
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-2">Loading Profile...</p>
+            </div>
+        );
     }
 
     return (
