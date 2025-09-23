@@ -9,6 +9,7 @@ import {
   HeartHandshake,
   Home,
   LogOut,
+  MessageSquare,
   ShieldCheck,
   User,
 } from "lucide-react";
@@ -48,6 +49,7 @@ const vaultItems = [
 
 const toolsItems = [
     { href: "/dashboard/shariah-assistant", label: "Shariah Assistant", icon: ShieldCheck },
+    { href: "/dashboard/chatbot", label: "Chatbot", icon: MessageSquare },
 ];
 
 export default function DashboardLayout({
@@ -170,9 +172,9 @@ export default function DashboardLayout({
                 <DropdownMenuSeparator />
                 {notificationCount > 0 ? (
                   <>
-                    <DropdownMenuItem>Your Qarz record is due soon.</DropdownMenuItem>
+                    {/* <DropdownMenuItem>Your Qarz record is due soon.</DropdownMenuItem>
                     <DropdownMenuItem>Wasiyat draft requires witness.</DropdownMenuItem>
-                    <DropdownMenuItem>New Shariah tip available.</DropdownMenuItem>
+                    <DropdownMenuItem>New Shariah tip available.</DropdownMenuItem> */}
                   </>
                 ) : (
                   <DropdownMenuItem>No new notifications.</DropdownMenuItem>
