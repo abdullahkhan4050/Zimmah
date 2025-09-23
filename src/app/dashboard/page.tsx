@@ -24,24 +24,24 @@ export default function DashboardPage({ params }: { params: any }) {
         <p className="text-muted-foreground">Welcome back, {userName}!</p>
       </header>
       
-      <section className="grid gap-6 md:grid-cols-5">
-        <Card className="md:col-span-3 border-2 flex flex-col">
+      <section className="grid gap-6">
+        <Card className="border-2 flex flex-col">
             <CardHeader>
                 <CardTitle className="text-primary">Your Digital Vault</CardTitle>
                 <CardDescription>You have no items yet. Get started by adding a new record.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex">
+            <CardContent className="flex-grow flex min-h-[300px]">
                 <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4">
                     <p className="text-muted-foreground">No activity to display.</p>
                 </div>
             </CardContent>
         </Card>
-        <Card className="md:col-span-2 border-2 flex flex-col">
+        <Card className="border-2 flex flex-col">
              <CardHeader>
                 <CardTitle className="text-primary">Quick Actions</CardTitle>
                 <CardDescription>Start a new record.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow grid content-start gap-4">
+            <CardContent className="flex-grow grid grid-cols-1 md:grid-cols-3 content-start gap-4">
                  <Link href="/dashboard/wasiyat">
                     <Button variant="outline" className="w-full justify-start gap-4 py-6">
                         <FileText className="h-5 w-5 text-muted-foreground" />
