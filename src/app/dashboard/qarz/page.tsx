@@ -340,7 +340,7 @@ export default function QarzPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-end">
                 <Button variant="outline" disabled>
                     <FileSignature className="mr-2 h-4 w-4" />
-                    Blockchain Verification (Coming Soon)
+                    Blockchain Verification (Future Release)
                 </Button>
                 <Button type="submit">
                   <PlusCircle className="mr-2 h-4 w-4" />
