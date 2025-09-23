@@ -101,7 +101,7 @@ export default function QarzPage() {
                     <FormItem>
                       <FormLabel>Debtor (Qarz lenay wala)</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., John Doe" {...field} />
+                        <Input placeholder="e.g., Ahmed Ali" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -114,7 +114,7 @@ export default function QarzPage() {
                     <FormItem>
                       <FormLabel>Creditor (Qarz denay wala)</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Jane Smith" {...field} />
+                        <Input placeholder="e.g., Fatima Zahra" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

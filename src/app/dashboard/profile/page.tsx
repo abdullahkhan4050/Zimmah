@@ -7,7 +7,7 @@ import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, Save } from "lucide-react";
@@ -26,8 +26,8 @@ export default function ProfilePage() {
     
     // Placeholder user data
     const currentUser = {
-        fullName: "Test User",
-        email: "user@example.com",
+        fullName: "Bilal Khan",
+        email: "bilal.khan@example.com",
         phone: "+92 300 1234567",
         address: "123 Main St, Islamabad"
     };

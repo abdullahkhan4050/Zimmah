@@ -115,7 +115,7 @@ export default function RegisterPage() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Full Name</FormLabel>
-                                <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                                <FormControl><Input placeholder="e.g., Bilal Khan" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
