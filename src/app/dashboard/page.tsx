@@ -1,4 +1,3 @@
-
 import {
   FileText,
   BookOpen,
@@ -14,12 +13,12 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function DashboardPage() {
-    const userName = "Test User";
+export default function DashboardPage({ params }: { params: any }) {
+    const userName = "User";
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight text-primary">
           Dashboard
         </h1>
         <p className="text-muted-foreground">Welcome back, {userName}!</p>
@@ -28,7 +27,7 @@ export default function DashboardPage() {
       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
             <CardHeader>
-                <CardTitle>Your Digital Vault</CardTitle>
+                <CardTitle className="text-primary">Your Digital Vault</CardTitle>
                 <CardDescription>You have no items yet. Get started by adding a new record.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -39,7 +38,7 @@ export default function DashboardPage() {
         </Card>
         <Card className="lg:col-span-3">
              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle className="text-primary">Quick Actions</CardTitle>
                 <CardDescription>Start a new record.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">

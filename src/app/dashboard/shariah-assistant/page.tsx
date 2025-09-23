@@ -62,7 +62,7 @@ export default function ShariahAssistantPage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>Evaluate a Financial Practice</CardTitle>
+                <CardTitle className="text-primary">Evaluate a Financial Practice</CardTitle>
                 <CardDescription>Describe a financial scenario or practice below, and our AI assistant will provide guidance.</CardDescription>
                  <Button variant="link" className="p-0 h-auto justify-start" onClick={() => setAssistanceMode(null)}>&larr; Back to options</Button>
               </CardHeader>
@@ -100,7 +100,7 @@ export default function ShariahAssistantPage() {
             {complianceResult && (
               <Card className="mt-6 animate-in fade-in-50">
                   <CardHeader>
-                      <CardTitle>AI Compliance Analysis</CardTitle>
+                      <CardTitle className="text-primary">AI Compliance Analysis</CardTitle>
                        <div className="flex items-center gap-2 pt-2">
                           <span className="font-semibold">Compliance Status:</span>
                           <Badge variant={complianceResult.isCompliant ? "default" : "destructive"} className={complianceResult.isCompliant ? 'bg-primary' : ''}>
@@ -129,7 +129,7 @@ export default function ShariahAssistantPage() {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Coming Soon</CardTitle>
+                    <CardTitle className="text-primary">Coming Soon</CardTitle>
                     <CardDescription>
                         This feature is currently under development. Soon you'll be able to connect directly with a {assistanceMode}.
                     </CardDescription>
@@ -146,7 +146,7 @@ export default function ShariahAssistantPage() {
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Choose Your Assistance Type</CardTitle>
+              <CardTitle className="text-primary">Choose Your Assistance Type</CardTitle>
               <CardDescription>Select how you would like to get Shariah compliance assistance.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -180,7 +180,7 @@ export default function ShariahAssistantPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2 text-primary">
           <ShieldCheck /> Shariah Compliance Assistant
         </h1>
         <p className="text-muted-foreground">Get AI-powered tips and reminders to ensure your financial practices are compliant.</p>

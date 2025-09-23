@@ -61,7 +61,7 @@ export default function AmanatPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
+        <h1 className="text-3xl font-bold font-headline tracking-tight flex items-center gap-2 text-primary">
           <HeartHandshake /> Amanat (Entrusted Items) Management
         </h1>
         <p className="text-muted-foreground">Keep track of items you have entrusted to others.</p>
@@ -69,7 +69,7 @@ export default function AmanatPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Record a New Entrusted Item</CardTitle>
+          <CardTitle className="text-primary">Record a New Entrusted Item</CardTitle>
           <CardDescription>Fill in the details below to add a new Amanat record.</CardDescription>
         </CardHeader>
         <CardContent>

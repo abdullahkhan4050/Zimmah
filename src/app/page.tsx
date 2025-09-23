@@ -68,7 +68,7 @@ export default function LoginPage() {
           {!selectedRole ? (
             <Card>
               <CardHeader>
-                <CardTitle className="font-headline text-center">
+                <CardTitle className="font-headline text-center text-primary">
                   Select Your Role
                 </CardTitle>
               </CardHeader>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                 >
                   &larr; Back to roles
                 </button>
-                <CardTitle className="font-headline text-center pt-8">
+                <CardTitle className="font-headline text-center pt-8 text-primary">
                   Login as {selectedRole}
                 </CardTitle>
               </CardHeader>

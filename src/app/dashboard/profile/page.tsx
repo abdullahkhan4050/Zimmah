@@ -7,7 +7,7 @@ import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, Save } from "lucide-react";
@@ -62,7 +62,7 @@ export default function ProfilePage() {
     return (
         <div className="flex flex-col gap-6">
             <header>
-                <h1 className="text-3xl font-bold font-headline tracking-tight">User Profile</h1>
+                <h1 className="text-3xl font-bold font-headline tracking-tight text-primary">User Profile</h1>
                 <p className="text-muted-foreground">Manage your personal information and settings.</p>
             </header>
 
@@ -74,7 +74,7 @@ export default function ProfilePage() {
                             <AvatarFallback>{userInitials}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-1">
-                            <CardTitle className="text-2xl font-headline">{currentUser.fullName}</CardTitle>
+                            <CardTitle className="text-2xl font-headline text-primary">{currentUser.fullName}</CardTitle>
                             <CardDescription>{currentUser.email}</CardDescription>
                             <Button size="sm" variant="outline" className="w-fit mt-2">
                                 <Upload className="mr-2 h-4 w-4" /> Change Photo

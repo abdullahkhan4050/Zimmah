@@ -94,7 +94,7 @@ export default function WasiyatPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2 text-primary">
           <FileText /> Wasiyat (Will) Creation
         </h1>
         <p className="text-muted-foreground">Create your Shariah-compliant will with our assistant.</p>
@@ -105,7 +105,7 @@ export default function WasiyatPage() {
             {!writeMode && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>How would you like to create your will?</CardTitle>
+                        <CardTitle className="text-primary">How would you like to create your will?</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 gap-4">
                         <Button variant="outline" size="lg" className="h-20 flex-col items-start p-4 gap-1" onClick={() => setWriteMode('ai')}>
@@ -129,7 +129,7 @@ export default function WasiyatPage() {
             {writeMode === 'ai' && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-primary">
                             <Sparkles className="text-primary"/> AI Will Assistant
                         </CardTitle>
                         <Button variant="link" className="p-0 h-auto justify-start" onClick={() => setWriteMode(null)}>&larr; Back to options</Button>
@@ -166,7 +166,7 @@ export default function WasiyatPage() {
             {writeMode === 'manual' && (
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-primary">
                             <Edit className="text-primary"/> Manual Will Editor
                         </CardTitle>
                          <Button variant="link" className="p-0 h-auto justify-start" onClick={() => setWriteMode(null)}>&larr; Back to options</Button>
@@ -198,7 +198,7 @@ export default function WasiyatPage() {
         <div className="lg:col-span-2">
             <Card className="min-h-[600px] flex flex-col">
                 <CardHeader>
-                    <CardTitle>Generated Will Draft</CardTitle>
+                    <CardTitle className="text-primary">Generated Will Draft</CardTitle>
                     <CardDescription>This is a draft for review. Please consult with a scholar before finalizing.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">

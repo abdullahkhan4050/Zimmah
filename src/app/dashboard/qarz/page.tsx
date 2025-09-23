@@ -79,7 +79,7 @@ export default function QarzPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2 text-primary">
           <BookOpen /> Qarz (Debt) Management
         </h1>
         <p className="text-muted-foreground">Record and track your debts according to Shariah principles.</p>
@@ -87,7 +87,7 @@ export default function QarzPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Record a New Debt</CardTitle>
+          <CardTitle className="text-primary">Record a New Debt</CardTitle>
           <CardDescription>Fill in the details below to add a new debt record.</CardDescription>
         </CardHeader>
         <CardContent>

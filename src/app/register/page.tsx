@@ -102,7 +102,7 @@ export default function RegisterPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Registration Details</CardTitle>
+            <CardTitle className="font-headline text-primary">Registration Details</CardTitle>
             <CardDescription>All fields are required unless stated otherwise.</CardDescription>
           </CardHeader>
           <CardContent>
