@@ -109,7 +109,7 @@ export default function AmanatPage() {
                       name="entrustee"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Entrustee (Person holding the item)</FormLabel>
+                          <FormLabel>Entrustee (Amanat rakhnay wala)</FormLabel>
                           <FormControl>
                             <Input placeholder="e.g., Ahmed Khan" {...field} />
                           </FormControl>
