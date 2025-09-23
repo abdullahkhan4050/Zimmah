@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -97,7 +98,7 @@ export default function QarzPage() {
                   name="debtor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Debtor (The one who owes)</FormLabel>
+                      <FormLabel>Debtor (Qarz lenay wala)</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g., John Doe" {...field} />
                       </FormControl>
