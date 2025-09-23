@@ -26,17 +26,6 @@ export default function DashboardPage({ params }: { params: any }) {
       
       <section className="grid gap-6">
         <Card className="border-2 flex flex-col">
-            <CardHeader>
-                <CardTitle className="text-primary">Your Digital Vault</CardTitle>
-                <CardDescription>You have no items yet. Get started by adding a new record.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow flex min-h-[300px]">
-                <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4">
-                    <p className="text-muted-foreground">No activity to display.</p>
-                </div>
-            </CardContent>
-        </Card>
-        <Card className="border-2 flex flex-col">
              <CardHeader>
                 <CardTitle className="text-primary">Quick Actions</CardTitle>
                 <CardDescription>Start a new record.</CardDescription>
@@ -60,6 +49,17 @@ export default function DashboardPage({ params }: { params: any }) {
                         <span>Add New Trust (Amanat)</span>
                     </Button>
                 </Link>
+            </CardContent>
+        </Card>
+        <Card className="border-2 flex flex-col">
+            <CardHeader>
+                <CardTitle className="text-primary">Your Digital Vault</CardTitle>
+                <CardDescription>You have no items yet. Get started by adding a new record.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow flex min-h-[300px]">
+                <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4">
+                    <p className="text-muted-foreground">No activity to display.</p>
+                </div>
             </CardContent>
         </Card>
       </section>
