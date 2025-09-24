@@ -25,6 +25,9 @@ const witnessSchema = z.object({
   name: z.string().min(2, "Witness name is required."),
   cnic: z.string().optional(),
   email: z.string().email("Invalid email.").optional().or(z.literal("")),
+}).refine(data => !!data.cnic || !!data.email, {
+  message: "Either CNIC or Email must be filled.",
+  path: ["cnic"],
 });
 
 const qarzSchema = z.object({
@@ -293,7 +296,7 @@ export default function QarzPage() {
                             name={`witnesses.${index}.cnic`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>CNIC (Optional)</FormLabel>
+                                <FormLabel>CNIC</FormLabel>
                                 <FormControl>
                                   <Input placeholder="e.g., 42201-1234567-1" {...field} />
                                 </FormControl>
@@ -306,7 +309,7 @@ export default function QarzPage() {
                             name={`witnesses.${index}.email`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Email (Optional)</FormLabel>
+                                <FormLabel>Email</FormLabel>
                                 <FormControl>
                                   <Input placeholder="e.g., witness@example.com" {...field} />
                                 </FormControl>
@@ -354,4 +357,3 @@ export default function QarzPage() {
     </div>
   );
 }
-
