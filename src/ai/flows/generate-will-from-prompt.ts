@@ -29,21 +29,23 @@ const prompt = ai.definePrompt({
   name: 'generateWillFromPromptPrompt',
   input: {schema: GenerateWillInputSchema},
   output: {schema: GenerateWillOutputSchema},
-  prompt: `You are an expert in Islamic inheritance law (Fara'id) and will drafting (Wasiyat).
+  prompt: `You are tasked with drafting a "Last Will and Testament" for users in Pakistan. The Will must:
+1.  Be written in formal legal language, following the style commonly used in Pakistan.
+2.  Begin with an Islamic greeting and a declaration (e.g., “Bismillah-ir-Rahman-ir-Rahim” and “This is the Last Will and Testament of …”).
+3.  Include standard sections:
+    - Testator’s details (name, CNIC, address).
+    - Revocation of previous wills.
+    - Distribution of assets according to Islamic inheritance principles (unless user specifies otherwise).
+    - Appointment of executor/trustee.
+    - Witness details.
+    - Date and place of signing.
+4.  Avoid foreign or Western phrasing. Keep it culturally and legally relevant for Pakistan.
+5.  Use respectful, precise, and unambiguous wording.
 
-  Based on the user's wishes and instructions provided in the prompt, you will generate a draft of their will (Wasiyat) that adheres to Shariah principles.
+User's wishes and instructions:
+{{{prompt}}}
 
-  Consider the following key aspects when drafting the will:
-
-  1.  Beneficiaries: Identify all beneficiaries and their relationship to the testator (the person making the will).
-  2.  Assets: List all assets to be included in the will, such as real estate, bank accounts, investments, and personal property.
-  3.  Inheritance Shares: Determine the appropriate inheritance shares for each beneficiary based on Islamic law.
-  4.  Specific Instructions: Include any specific instructions or conditions the testator wishes to include in their will.
-
-  User's wishes and instructions:
-  {{{prompt}}}
-
-  Draft the will in a clear and concise manner, using appropriate legal and Islamic terminology.
+Output must always be in a formal Pakistani legal document format, not casual writing.
   `,
 });
 
