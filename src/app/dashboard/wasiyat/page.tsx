@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from "react";
@@ -40,6 +41,10 @@ export default function WasiyatPage() {
         prompt: ""
     }
   });
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   async function onAiSubmit(data: z.infer<typeof wasiyatSchema>) {
     startTransition(async () => {
@@ -92,8 +97,8 @@ export default function WasiyatPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <header>
+    <div className="flex flex-col gap-6" id="wasiyat-page">
+      <header className="print:hidden">
         <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2 text-primary">
           <FileText /> Wasiyat (Will) Creation
         </h1>
@@ -101,7 +106,7 @@ export default function WasiyatPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 flex flex-col gap-6">
+        <div className="lg:col-span-1 flex flex-col gap-6 print:hidden">
             {!writeMode && (
                 <Card className="border-2">
                     <CardHeader>
@@ -195,17 +200,17 @@ export default function WasiyatPage() {
             </Alert>
         </div>
 
-        <div className="lg:col-span-2">
-            <Card className="min-h-[600px] flex flex-col border-2">
-                <CardHeader>
+        <div className="lg:col-span-2" id="printable-will">
+            <Card className="min-h-[600px] flex flex-col border-2 print:border-0 print:shadow-none">
+                <CardHeader className="print:hidden">
                     <CardTitle className="text-primary">Generated Will Draft</CardTitle>
                     <CardDescription>This is a draft for review. Please consult with a scholar before finalizing.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
+                <CardContent className="flex-1 flex flex-col print:p-0">
                     {isPending && <div className="text-center p-8 m-auto">Generating your will draft... <Sparkles className="inline-block animate-pulse" /></div>}
                     
                     {!isPending && !willDraft && (
-                        <div className="m-auto text-center p-8 text-muted-foreground">
+                        <div className="m-auto text-center p-8 text-muted-foreground print:hidden">
                             {writeMode === 'ai' && "Your AI-generated will draft will appear here."}
                             {writeMode === 'manual' && "Your manually saved will will appear here after saving."}
                             {!writeMode && "Choose an option to start creating your will."}
@@ -214,23 +219,23 @@ export default function WasiyatPage() {
 
                     {willDraft && (
                         <div className="space-y-6 flex-1 flex flex-col">
-                             <Alert variant="destructive">
+                             <Alert variant="destructive" className="print:hidden">
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle>Disclaimer</AlertTitle>
                                 <AlertDescription>
                                 This is not a legally binding document. It is a draft generated for review purposes. Consult a qualified Islamic scholar and legal professional before finalizing.
                                 </AlertDescription>
                             </Alert>
-                            <div className="font-body whitespace-pre-wrap p-6 bg-muted/50 rounded-md border text-sm overflow-x-auto flex-1">
+                            <div className="font-body whitespace-pre-wrap p-6 bg-muted/50 rounded-md border text-sm overflow-x-auto flex-1 print:bg-transparent print:border-none print:p-0">
                                 {willDraft}
                             </div>
-                            <Separator />
-                            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-center">
+                            <Separator className="print:hidden" />
+                            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-center print:hidden">
                                 <div className="flex flex-wrap gap-2">
                                     <Button variant="outline"><UserCheck className="mr-2 h-4 w-4" /> Assign Witnesses</Button>
                                     <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Send for Scholar Review</Button>
                                 </div>
-                                 <Button><Printer className="mr-2 h-4 w-4" /> Print / Save as PDF</Button>
+                                 <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print / Save as PDF</Button>
                             </div>
                         </div>
                     )}
@@ -241,3 +246,5 @@ export default function WasiyatPage() {
     </div>
   );
 }
+
+    
