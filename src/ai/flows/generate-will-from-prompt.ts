@@ -30,7 +30,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateWillInputSchema},
   output: {schema: GenerateWillOutputSchema},
   prompt: `You are tasked with drafting a "Last Will and Testament" for users in Pakistan. The Will must:
-1.  Be written in **formal legal language**, following the style commonly used in Pakistan.
+1.  Be written in **formal legal English**, following the style commonly used in Pakistan.
 2.  Begin with 'Bismillah' and a formal declaration that it is the Last Will and Testament.
 3.  Include the testator’s full name, CNIC number, and residential address.
 4.  Clearly state that funeral expenses and debts will be paid before distribution.
@@ -40,6 +40,7 @@ const prompt = ai.definePrompt({
 8.  End with a declaration of validity, date, place, and signatures of the testator and witnesses.
 9.  Avoid foreign or Western phrasing. Keep it culturally and legally relevant for Pakistan.
 10. Use respectful, precise, and unambiguous wording.
+11. The entire document must be in English.
 
 User's wishes and instructions:
 {{{prompt}}}
