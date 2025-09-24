@@ -30,22 +30,21 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateWillInputSchema},
   output: {schema: GenerateWillOutputSchema},
   prompt: `You are tasked with drafting a "Last Will and Testament" for users in Pakistan. The Will must:
-1.  Be written in formal legal language, following the style commonly used in Pakistan.
-2.  Begin with an Islamic greeting and a declaration (e.g., “Bismillah-ir-Rahman-ir-Rahim” and “This is the Last Will and Testament of …”).
-3.  Include standard sections:
-    - Testator’s details (name, CNIC, address).
-    - Revocation of previous wills.
-    - Distribution of assets according to Islamic inheritance principles (unless user specifies otherwise).
-    - Appointment of executor/trustee.
-    - Witness details.
-    - Date and place of signing.
-4.  Avoid foreign or Western phrasing. Keep it culturally and legally relevant for Pakistan.
-5.  Use respectful, precise, and unambiguous wording.
+1.  Be written in **formal legal language**, following the style commonly used in Pakistan.
+2.  Begin with 'Bismillah' and a formal declaration that it is the Last Will and Testament.
+3.  Include the testator’s full name, CNIC number, and residential address.
+4.  Clearly state that funeral expenses and debts will be paid before distribution.
+5.  Distribute all assets (movable and immovable) according to Islamic inheritance (Shariah) rules, unless otherwise specified by the user's prompt.
+6.  Appoint an Executor/Trustee with their full name, CNIC, and relationship to the testator.
+7.  Add space for two witnesses with their names, CNICs, and addresses.
+8.  End with a declaration of validity, date, place, and signatures of the testator and witnesses.
+9.  Avoid foreign or Western phrasing. Keep it culturally and legally relevant for Pakistan.
+10. Use respectful, precise, and unambiguous wording.
 
 User's wishes and instructions:
 {{{prompt}}}
 
-Output must always be in a formal Pakistani legal document format, not casual writing.
+Output must always be in a **formal Pakistani legal document format**, not casual writing.
   `,
 });
 
