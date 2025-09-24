@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -5,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Info, ShieldCheck } from "lucide-react";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +37,7 @@ import {
 import { ZimmahLogo } from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth, useFirestore } from "@/firebase";
 
 const formSchema = z
   .object({
@@ -61,6 +65,8 @@ const formSchema = z
 export default function RegisterPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const auth = useAuth();
+    const firestore = useFirestore();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -78,13 +84,46 @@ export default function RegisterPage() {
         },
     });
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values);
-        toast({
-            title: "Registration Successful!",
-            description: "Redirecting you to the dashboard...",
-        });
-        setTimeout(() => router.push('/dashboard'), 1500);
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        if (!auth || !firestore) {
+             toast({
+                title: "Error",
+                description: "Firebase not initialized.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const user = userCredential.user;
+
+            await updateProfile(user, {
+                displayName: values.fullName,
+            });
+
+            await setDoc(doc(firestore, "users", user.uid), {
+                fullName: values.fullName,
+                email: values.email,
+                cnic: values.cnic,
+                phone: values.phone,
+                dob: values.dob,
+                address1: values.address1,
+                address2: values.address2,
+            });
+
+            toast({
+                title: "Registration Successful!",
+                description: "Redirecting you to the dashboard...",
+            });
+            router.push('/dashboard');
+        } catch (error: any) {
+             toast({
+                title: "Registration Failed",
+                description: error.message,
+                variant: "destructive",
+            });
+        }
     }
 
   return (

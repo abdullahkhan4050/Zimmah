@@ -22,6 +22,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NaiveForceLogo, ZimmahLogo } from "@/components/icons";
+import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 type Role = "User" | "Scholar" | "Witness" | "Admin";
 
@@ -50,6 +54,32 @@ const roles = [
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) return;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: "Login Successful!",
+        description: "Redirecting you to the dashboard...",
+      });
+      router.push("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-green-100 via-blue-50 to-orange-50 p-4">
@@ -104,14 +134,14 @@ export default function LoginPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <form className="space-y-4">
+                <form className="space-y-4" onSubmit={handleLogin}>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="m@example.com" />
+                    <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" />
+                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
                   </div>
                   <div className="flex items-center justify-between">
                     <Link
@@ -121,12 +151,12 @@ export default function LoginPage() {
                       Forgot Password?
                     </Link>
                   </div>
-                  <Link href="/dashboard" className="w-full block">
-                    <Button className="w-full" type="submit">
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                      Login
-                    </Button>
-                  </Link>
+                  
+                  <Button className="w-full" type="submit">
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Login
+                  </Button>
+                  
                 </form>
                 <div className="mt-4 text-center text-sm">
                   Don&apos;t have an account?{" "}

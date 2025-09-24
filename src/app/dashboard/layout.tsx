@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -40,6 +41,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 const vaultItems = [
   { href: "/dashboard/wasiyat", label: "Wasiyat (Wills)", icon: FileText },
@@ -58,10 +62,22 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const userName = "Test User";
-  const userEmail = "user@example.com";
+  const { user } = useAuth();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const userName = user?.displayName || "Test User";
+  const userEmail = user?.email || "user@example.com";
   const userInitials = userName.split(' ').map(n => n[0]).join('');
   const notificationCount = 0;
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+      router.push('/');
+    }
+  };
+
 
   return (
     <SidebarProvider>
@@ -138,12 +154,10 @@ export default function DashboardLayout({
                  </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/">
-                    <SidebarMenuButton tooltip="Logout">
-                        <LogOut />
-                        <span>Logout</span>
-                    </SidebarMenuButton>
-                </Link>
+                <SidebarMenuButton tooltip="Logout" onClick={handleLogout}>
+                    <LogOut />
+                    <span>Logout</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
@@ -185,7 +199,7 @@ export default function DashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="rounded-full">
                   <Avatar>
-                    <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=${userEmail}`} alt={userName} />
+                    <AvatarImage src={user?.photoURL || `https://api.dicebear.com/8.x/initials/svg?seed=${userEmail}`} alt={userName} />
                     <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
                   <span className="sr-only">Toggle user menu</span>
@@ -198,7 +212,7 @@ export default function DashboardLayout({
                 <DropdownMenuItem>Emergency Access</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link href="/">Logout</Link></DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
