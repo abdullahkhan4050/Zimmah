@@ -200,8 +200,8 @@ export default function WasiyatPage() {
             </Alert>
         </div>
 
-        <div className="lg:col-span-2" id="printable-will">
-            <Card className="min-h-[600px] flex flex-col border-2 print:border-0 print:shadow-none">
+        <div className="lg:col-span-2">
+             <Card className="min-h-[600px] flex flex-col border-2 print:border-0 print:shadow-none" id="printable-will">
                 <CardHeader className="print:hidden">
                     <CardTitle className="text-primary">Generated Will Draft</CardTitle>
                     <CardDescription>This is a draft for review. Please consult with a scholar before finalizing.</CardDescription>
@@ -246,5 +246,4 @@ export default function WasiyatPage() {
     </div>
   );
 }
-
     
