@@ -7,7 +7,7 @@ import {
   query,
   where,
   type DocumentData,
-  type CollectionReference,
+  CollectionReference,
   type Query,
 } from 'firebase/firestore';
 import { useFirestore } from '../provider';
