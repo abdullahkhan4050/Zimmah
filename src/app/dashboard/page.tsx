@@ -1,3 +1,6 @@
+
+"use client";
+
 import {
   FileText,
   BookOpen,
@@ -12,9 +15,61 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useEffect, useState } from "react";
+import { getFirestore, collection, getDocs, orderBy, query } from "firebase/firestore";
+import { app } from "@/lib/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function DashboardPage({ params }: { params: any }) {
+
+type Wasiyat = { id: string; will: string; type: string; createdAt: any };
+type Qarz = { id: string; debtor: string; creditor: string; amount: number; dueDate: string };
+type Amanat = { id: string; item: string; entrustee: string; returnDate: string };
+
+
+export default function DashboardPage() {
     const userName = "User";
+    const [wasiyat, setWasiyat] = useState<Wasiyat[]>([]);
+    const [qarz, setQarz] = useState<Qarz[]>([]);
+    const [amanat, setAmanat] = useState<Amanat[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const db = getFirestore(app);
+
+                const wasiyatQuery = query(collection(db, "wasiyat"), orderBy("createdAt", "desc"));
+                const wasiyatSnapshot = await getDocs(wasiyatQuery);
+                setWasiyat(wasiyatSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Wasiyat)));
+
+                const qarzQuery = query(collection(db, "qarz"), orderBy("createdAt", "desc"));
+                const qarzSnapshot = await getDocs(qarzQuery);
+                setQarz(qarzSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Qarz)));
+
+                const amanatSnapshot = await getDocs(collection(db, "amanat"));
+                setAmanat(amanatSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amanat)));
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
+
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -54,15 +109,145 @@ export default function DashboardPage({ params }: { params: any }) {
         <Card className="border-2 flex flex-col">
             <CardHeader>
                 <CardTitle className="text-primary">Your Digital Vault</CardTitle>
-                <CardDescription>You have no items yet. Get started by adding a new record.</CardDescription>
+                <CardDescription>An overview of your recorded assets and liabilities.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex min-h-[300px]">
-                <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4">
-                    <p className="text-muted-foreground">No activity to display.</p>
-                </div>
+            <CardContent className="flex-grow flex flex-col min-h-[300px]">
+                <Tabs defaultValue="wasiyat" className="w-full flex-1 flex flex-col">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="wasiyat">Wasiyat (Wills)</TabsTrigger>
+                    <TabsTrigger value="qarz">Qarz (Debts)</TabsTrigger>
+                    <TabsTrigger value="amanat">Amanat (Trusts)</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="wasiyat" className="flex-1">
+                    {loading ? (
+                        <div className="space-y-2 pt-4">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                    ) : wasiyat.length > 0 ? (
+                        <ul className="space-y-2 pt-4">
+                            {wasiyat.map((item) => (
+                                <li key={item.id}>
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-between">
+                                                <span>Will created via {item.type} mode</span>
+                                                <span className="text-muted-foreground text-xs">{item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString() : ''}</span>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Will Details</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This is the content of your saved will.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                                <div className="font-body whitespace-pre-wrap p-4 bg-muted/50 rounded-md border text-sm max-h-[50vh] overflow-y-auto">
+                                                    {item.will}
+                                                </div>
+                                            <AlertDialogFooter>
+                                                <AlertDialogAction>Close</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                         <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4 mt-4">
+                            <p className="text-muted-foreground">There is no will generated.</p>
+                        </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="qarz" className="flex-1">
+                     {loading ? (
+                         <div className="space-y-2 pt-4">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                     ) : qarz.length > 0 ? (
+                         <ul className="space-y-2 pt-4">
+                            {qarz.map((item) => (
+                                <li key={item.id}>
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-between">
+                                                <span>Debt of {item.amount} from {item.debtor} to {item.creditor}</span>
+                                                 <span className="text-muted-foreground text-xs">Due: {item.dueDate}</span>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Qarz Details</AlertDialogTitle>
+                                            </AlertDialogHeader>
+                                            <div className="text-sm">
+                                                <p><strong>Amount:</strong> {item.amount}</p>
+                                                <p><strong>Debtor:</strong> {item.debtor}</p>
+                                                <p><strong>Creditor:</strong> {item.creditor}</p>
+                                                <p><strong>Due Date:</strong> {item.dueDate}</p>
+                                            </div>
+                                            <AlertDialogFooter>
+                                                <AlertDialogAction>Close</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </li>
+                            ))}
+                        </ul>
+                     ) : (
+                        <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4 mt-4">
+                            <p className="text-muted-foreground">No Qarz records found.</p>
+                        </div>
+                     )}
+                  </TabsContent>
+
+                  <TabsContent value="amanat" className="flex-1">
+                     {loading ? (
+                         <div className="space-y-2 pt-4">
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                     ) : amanat.length > 0 ? (
+                        <ul className="space-y-2 pt-4">
+                            {amanat.map((item) => (
+                               <li key={item.id}>
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-between">
+                                                <span>{item.item} entrusted to {item.entrustee}</span>
+                                                <span className="text-muted-foreground text-xs">Return: {item.returnDate}</span>
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Amanat Details</AlertDialogTitle>
+                                            </AlertDialogHeader>
+                                             <div className="text-sm">
+                                                <p><strong>Item:</strong> {item.item}</p>
+                                                <p><strong>Entrustee:</strong> {item.entrustee}</p>
+                                                <p><strong>Return Date:</strong> {item.returnDate}</p>
+                                            </div>
+                                            <AlertDialogFooter>
+                                                <AlertDialogAction>Close</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </li>
+                            ))}
+                        </ul>
+                     ) : (
+                         <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-center p-4 mt-4">
+                            <p className="text-muted-foreground">No Amanat records found.</p>
+                        </div>
+                     )}
+                  </TabsContent>
+                </Tabs>
             </CardContent>
         </Card>
       </section>
     </div>
   );
 }
+
+    
