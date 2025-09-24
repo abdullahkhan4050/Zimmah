@@ -26,9 +26,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useEffect, useState } from "react";
-import { getFirestore, collection, getDocs, orderBy, query } from "firebase/firestore";
-import { app } from "@/lib/firebase";
+import { useEffect, useState, useMemo } from "react";
+import { collection, orderBy, query } from "firebase/firestore";
+import { useCollection, useFirestore } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -39,36 +39,18 @@ type Amanat = { id: string; item: string; entrustee: string; returnDate: string 
 
 export default function DashboardPage() {
     const userName = "User";
-    const [wasiyat, setWasiyat] = useState<Wasiyat[]>([]);
-    const [qarz, setQarz] = useState<Qarz[]>([]);
-    const [amanat, setAmanat] = useState<Amanat[]>([]);
-    const [loading, setLoading] = useState(true);
+    const firestore = useFirestore();
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const db = getFirestore(app);
+    const wasiyatQuery = useMemo(() => firestore ? query(collection(firestore, "wasiyat"), orderBy("createdAt", "desc")) : null, [firestore]);
+    const { data: wasiyat, loading: wasiyatLoading } = useCollection<Wasiyat>(wasiyatQuery);
+    
+    const qarzQuery = useMemo(() => firestore ? query(collection(firestore, "qarz"), orderBy("createdAt", "desc")) : null, [firestore]);
+    const { data: qarz, loading: qarzLoading } = useCollection<Qarz>(qarzQuery);
 
-                const wasiyatQuery = query(collection(db, "wasiyat"), orderBy("createdAt", "desc"));
-                const wasiyatSnapshot = await getDocs(wasiyatQuery);
-                setWasiyat(wasiyatSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Wasiyat)));
+    const amanatQuery = useMemo(() => firestore ? collection(firestore, "amanat") : null, [firestore]);
+    const { data: amanat, loading: amanatLoading } = useCollection<Amanat>(amanatQuery);
 
-                const qarzQuery = query(collection(db, "qarz"), orderBy("createdAt", "desc"));
-                const qarzSnapshot = await getDocs(qarzQuery);
-                setQarz(qarzSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Qarz)));
-
-                const amanatSnapshot = await getDocs(collection(db, "amanat"));
-                setAmanat(amanatSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Amanat)));
-
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchData();
-    }, []);
-
+    const loading = wasiyatLoading || qarzLoading || amanatLoading;
 
   return (
     <div className="flex flex-col gap-6">
@@ -125,7 +107,7 @@ export default function DashboardPage() {
                             <Skeleton className="h-12 w-full" />
                             <Skeleton className="h-12 w-full" />
                         </div>
-                    ) : wasiyat.length > 0 ? (
+                    ) : wasiyat && wasiyat.length > 0 ? (
                         <ul className="space-y-2 pt-4">
                             {wasiyat.map((item) => (
                                 <li key={item.id}>
@@ -167,7 +149,7 @@ export default function DashboardPage() {
                             <Skeleton className="h-12 w-full" />
                             <Skeleton className="h-12 w-full" />
                         </div>
-                     ) : qarz.length > 0 ? (
+                     ) : qarz && qarz.length > 0 ? (
                          <ul className="space-y-2 pt-4">
                             {qarz.map((item) => (
                                 <li key={item.id}>
@@ -208,7 +190,7 @@ export default function DashboardPage() {
                          <div className="space-y-2 pt-4">
                             <Skeleton className="h-12 w-full" />
                         </div>
-                     ) : amanat.length > 0 ? (
+                     ) : amanat && amanat.length > 0 ? (
                         <ul className="space-y-2 pt-4">
                             {amanat.map((item) => (
                                <li key={item.id}>

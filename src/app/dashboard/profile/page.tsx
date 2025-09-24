@@ -4,8 +4,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getFirestore, collection, doc, getDocs, updateDoc, query, limit } from "firebase/firestore";
-import { useEffect, useState, useRef }from "react";
+import { collection, doc, getDocs, updateDoc, query, limit } from "firebase/firestore";
+import { useEffect, useState, useRef, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { app } from "@/lib/firebase";
+import { useDoc, useFirestore } from "@/firebase";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const profileSchema = z.object({
     fullName: z.string().min(2, "Full name is required"),
@@ -28,10 +30,10 @@ type ProfileData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
     const { toast } = useToast();
-    const [loading, setLoading] = useState(true);
     const [profileId, setProfileId] = useState<string | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const firestore = useFirestore();
 
     const form = useForm<ProfileData>({
         resolver: zodResolver(profileSchema),
@@ -43,46 +45,55 @@ export default function ProfilePage() {
             avatar: "",
         },
     });
+    
+    // In a real app, you would fetch the user's profile based on their UID.
+    // For this example, we'll fetch the first user profile we find.
+    const profileDocRef = useMemo(() => {
+        if (!firestore || !profileId) return null;
+        return doc(firestore, 'users', profileId);
+    }, [firestore, profileId]);
+
+    const { data: profileData, loading } = useDoc<ProfileData>(profileDocRef, {
+        onSuccess: (data) => {
+            if (data) {
+                form.reset(data);
+                if (data.avatar) {
+                    setAvatarPreview(data.avatar);
+                }
+            }
+        }
+    });
 
     useEffect(() => {
-        async function fetchProfile() {
+        async function fetchProfileId() {
+            if (!firestore) return;
             try {
-                const db = getFirestore(app);
-                // In a real app, you would fetch the user's profile based on their UID.
-                // For this example, we'll fetch the first user profile we find.
-                const q = query(collection(db, "users"), limit(1));
+                const q = query(collection(firestore, "users"), limit(1));
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
                     const userDoc = querySnapshot.docs[0];
-                    const userData = userDoc.data() as ProfileData;
-                    form.reset(userData);
                     setProfileId(userDoc.id);
-                    if (userData.avatar) {
-                      setAvatarPreview(userData.avatar);
-                    }
                 } else {
-                    // Fallback to placeholder if no user exists
-                    form.reset({
+                     form.reset({
                         fullName: "Bilal Khan",
                         email: "bilal.khan@example.com",
                         phone: "+92 300 1234567",
                         address: "123 Main St, Islamabad"
                     });
                 }
-            } catch (error) {
-                console.error("Error fetching profile:", error);
-                toast({
-                    title: "Error",
-                    description: "Failed to load profile data.",
-                    variant: "destructive",
-                });
-            } finally {
-                setLoading(false);
+            } catch (error: any) {
+                 errorEmitter.emit("permission-error", new FirestorePermissionError({
+                    path: '/users',
+                    operation: "list",
+                }));
             }
         }
-        fetchProfile();
-    }, [form, toast]);
+        if(!profileId) {
+            fetchProfileId();
+        }
+    }, [firestore, form, profileId]);
+
 
     const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -98,7 +109,7 @@ export default function ProfilePage() {
     };
 
     async function onSubmit(values: ProfileData) {
-        if (!profileId) {
+        if (!profileDocRef) {
             toast({
                 title: "Error",
                 description: "No user profile found to update. You might need to create one first.",
@@ -107,30 +118,28 @@ export default function ProfilePage() {
             return;
         }
 
-        try {
-            const db = getFirestore(app);
-            const userDocRef = doc(db, "users", profileId);
-            // In a real app, you would upload the image to Firebase Storage and save the URL.
-            // For this demo, we're saving the base64 string.
-            await updateDoc(userDocRef, values);
+        // In a real app, you would upload the image to Firebase Storage and save the URL.
+        // For this demo, we're saving the base64 string.
+        updateDoc(profileDocRef, values)
+        .then(() => {
             toast({
                 title: "Profile Updated",
                 description: "Your personal information has been saved.",
             });
-        } catch (error) {
-            console.error("Error updating profile: ", error);
-            toast({
-                title: "Error",
-                description: "Failed to update profile. Please try again.",
-                variant: "destructive",
-            });
-        }
+        })
+        .catch(async (error) => {
+             errorEmitter.emit("permission-error", new FirestorePermissionError({
+                path: profileDocRef.path,
+                operation: "update",
+                requestResourceData: values,
+            }));
+        });
     }
     
     const currentUser = form.watch();
     const userInitials = currentUser.fullName ? currentUser.fullName.split(' ').map(n => n[0]).join('') : '';
 
-    if (loading) {
+    if (loading && !profileData) {
         return (
             <div className="flex justify-center items-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

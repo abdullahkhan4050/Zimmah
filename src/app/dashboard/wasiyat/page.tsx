@@ -6,7 +6,7 @@ import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangl
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,9 @@ import { useToast } from "@/hooks/use-toast";
 import { generateWillAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { app } from "@/lib/firebase";
+import { useFirestore } from "@/firebase";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const wasiyatSchema = z.object({
   prompt: z.string().min(50, "Please provide a detailed description of your wishes (at least 50 characters)."),
@@ -36,6 +38,7 @@ export default function WasiyatPage() {
   const [manualWill, setManualWill] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editedWill, setEditedWill] = useState("");
+  const firestore = useFirestore();
 
   const aiForm = useForm<z.infer<typeof wasiyatSchema>>({
     resolver: zodResolver(wasiyatSchema),
@@ -70,7 +73,7 @@ export default function WasiyatPage() {
   }
 
   async function handleManualSave() {
-    if (!manualWill) {
+    if (!manualWill || !firestore) {
       toast({
         title: "Error",
         description: "Will content cannot be empty.",
@@ -78,28 +81,31 @@ export default function WasiyatPage() {
       });
       return;
     }
-    try {
-      const db = getFirestore(app);
-      await addDoc(collection(db, "wasiyat"), {
-        will: manualWill,
-        type: 'manual',
-        createdAt: serverTimestamp(),
+    const wasiyatData = {
+      will: manualWill,
+      type: 'manual',
+      createdAt: serverTimestamp(),
+    };
+
+    const collectionRef = collection(firestore, "wasiyat");
+
+    addDoc(collectionRef, wasiyatData)
+      .then(() => {
+          toast({
+            title: "Will Saved",
+            description: "Your manually created will has been saved.",
+          });
+          setWillDraft(manualWill); // Show the saved will in the draft view
+          setEditedWill(manualWill);
+          setIsEditing(false);
+      })
+      .catch((error) => {
+          errorEmitter.emit("permission-error", new FirestorePermissionError({
+            path: collectionRef.path,
+            operation: "create",
+            requestResourceData: wasiyatData,
+          }));
       });
-      toast({
-        title: "Will Saved",
-        description: "Your manually created will has been saved.",
-      });
-       setWillDraft(manualWill); // Show the saved will in the draft view
-       setEditedWill(manualWill);
-       setIsEditing(false);
-    } catch (error) {
-      console.error("Error saving manual will: ", error);
-      toast({
-        title: "Error",
-        description: "Failed to save your will. Please try again.",
-        variant: "destructive",
-      });
-    }
   }
 
   const handleEditSave = () => {

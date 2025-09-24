@@ -6,8 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { BookOpen, CalendarIcon, PlusCircle, FileSignature, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,9 +16,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { app } from "@/lib/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const witnessSchema = z.object({
   name: z.string().min(2, "Witness name is required."),
@@ -42,6 +43,9 @@ const qarzSchema = z.object({
 
 export default function QarzPage() {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useAuth();
+
   const form = useForm<z.infer<typeof qarzSchema>>({
     resolver: zodResolver(qarzSchema),
     defaultValues: {
@@ -61,47 +65,44 @@ export default function QarzPage() {
   const watchAddWitnesses = form.watch("addWitnesses");
 
   async function onSubmit(data: z.infer<typeof qarzSchema>) {
-    try {
-      const db = getFirestore(app);
-      const auth = getAuth(app);
-      const user = auth.currentUser;
-
-      if (!user) {
-        toast({
-          title: "Authentication Error",
-          description: "You must be logged in to record a Qarz.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const qarzData: any = {
-        ...data,
-        userId: user.uid,
-        createdAt: serverTimestamp(),
-        startDate: format(data.startDate, "PPP"),
-        dueDate: format(data.dueDate, "PPP"),
-      };
-
-      if (!data.addWitnesses) {
-        delete qarzData.witnesses;
-      }
-
-
-      await addDoc(collection(db, "qarz"), qarzData);
+    if (!user || !firestore) {
       toast({
-        title: "Qarz Recorded",
-        description: "The debt has been successfully recorded.",
-      });
-      form.reset();
-    } catch (error) {
-      console.error("Error adding document: ", error);
-      toast({
-        title: "Error",
-        description: "Failed to record Qarz. Please try again.",
+        title: "Authentication Error",
+        description: "You must be logged in to record a Qarz.",
         variant: "destructive",
       });
+      return;
     }
+    
+    const qarzData: any = {
+      ...data,
+      userId: user.uid,
+      createdAt: serverTimestamp(),
+      startDate: format(data.startDate, "PPP"),
+      dueDate: format(data.dueDate, "PPP"),
+    };
+
+    if (!data.addWitnesses) {
+      delete qarzData.witnesses;
+    }
+    
+    const collectionRef = collection(firestore, "qarz");
+
+    addDoc(collectionRef, qarzData)
+      .then(() => {
+        toast({
+          title: "Qarz Recorded",
+          description: "The debt has been successfully recorded.",
+        });
+        form.reset();
+      })
+      .catch(async (error) => {
+        errorEmitter.emit("permission-error", new FirestorePermissionError({
+          path: collectionRef.path,
+          operation: "create",
+          requestResourceData: qarzData,
+        }));
+      });
   }
 
   return (
