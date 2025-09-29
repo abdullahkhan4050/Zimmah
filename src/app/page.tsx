@@ -122,14 +122,14 @@ export default function LoginPage() {
             </Card>
           ) : (
             <Card>
-              <CardHeader className="relative">
+              <CardHeader className="relative text-center">
                 <button
                   onClick={() => setSelectedRole(null)}
-                  className="absolute left-4 top-4 text-sm text-muted-foreground hover:text-primary"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground hover:text-primary"
                 >
-                  &larr; Back to roles
+                  &larr; Back
                 </button>
-                <CardTitle className="font-headline text-center pt-8 text-primary">
+                <CardTitle className="font-headline text-primary">
                   Login as {selectedRole}
                 </CardTitle>
               </CardHeader>
