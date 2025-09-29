@@ -1,21 +1,44 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own documents in the 'qarz' collection.
-    match /qarz/{docId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null;
+
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    // Allow users to read and write their own documents in the 'amanat' collection.
-    match /amanat/{docId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null;
+    // By default, deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // USERS
+    // A user can read/update their own profile and anyone can create a user profile (for registration)
+    match /users/{userId} {
+      allow read, update: if isOwner(userId);
+      allow create: if request.auth.uid != null;
     }
     
-    // Allow users to manage their own profile document.
-    match /users/{userId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+    // WASIYAT (WILLS)
+    // A user can list and create their own wasiyat records
+    match /wasiyat/{wasiyatId} {
+       allow list, create: if isOwner(request.resource.data.userId);
+       allow read: if isOwner(resource.data.userId);
+    }
+
+    // QARZ (DEBTS)
+    // A user can list and create their own qarz records
+    match /qarz/{qarzId} {
+      allow list, create: if isOwner(request.resource.data.userId);
+      allow read: if isOwner(resource.data.userId);
+    }
+
+    // AMANAT (TRUSTS)
+    // A user can list and create their own amanat records
+    match /amanat/{amanatId} {
+      allow list, create: if isOwner(request.resource.data.userId);
+      allow read: if isOwner(resource.data.userId);
     }
   }
 }
