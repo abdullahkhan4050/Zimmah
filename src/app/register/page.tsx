@@ -2,10 +2,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Info, ShieldCheck } from "lucide-react";
+import { Info, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
 
@@ -67,6 +68,8 @@ export default function RegisterPage() {
     const { toast } = useToast();
     const auth = useAuth();
     const firestore = useFirestore();
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -244,7 +247,21 @@ export default function RegisterPage() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Password</FormLabel>
-                                <FormControl><Input type="password" {...field} /></FormControl>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input type={showPassword ? "text" : "password"} {...field} />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="absolute inset-y-0 right-0 h-full px-3"
+                                      onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                      {showPassword ? <EyeOff /> : <Eye />}
+                                      <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                                    </Button>
+                                  </div>
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -255,7 +272,21 @@ export default function RegisterPage() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Confirm Password</FormLabel>
-                                <FormControl><Input type="password" {...field} /></FormControl>
+                                 <FormControl>
+                                  <div className="relative">
+                                    <Input type={showConfirmPassword ? "text" : "password"} {...field} />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="absolute inset-y-0 right-0 h-full px-3"
+                                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    >
+                                      {showConfirmPassword ? <EyeOff /> : <Eye />}
+                                      <span className="sr-only">{showConfirmPassword ? "Hide password" : "Show password"}</span>
+                                    </Button>
+                                  </div>
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}

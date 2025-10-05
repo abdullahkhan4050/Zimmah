@@ -9,6 +9,8 @@ import {
   HeartHandshake,
   UserCog,
   ShieldCheck,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,7 @@ export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -141,7 +144,19 @@ export default function LoginPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <div className="relative">
+                      <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute inset-y-0 right-0 h-full px-3"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff /> : <Eye />}
+                        <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <Link
