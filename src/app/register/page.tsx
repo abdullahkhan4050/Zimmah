@@ -117,12 +117,18 @@ export default function RegisterPage() {
         
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+        const pendingUserData: any = {
+            ...values,
+            otp: otp,
+            createdAt: serverTimestamp()
+        };
+
+        if (!pendingUserData.cnicFile) {
+            delete pendingUserData.cnicFile;
+        }
+
         try {
-            await addDoc(collection(firestore, "pending_users"), {
-                ...values,
-                otp: otp,
-                createdAt: serverTimestamp()
-            });
+            await addDoc(collection(firestore, "pending_users"), pendingUserData);
 
             // In a real app, a Cloud Function would listen to this document creation
             // and send an email with the OTP.
@@ -165,7 +171,7 @@ export default function RegisterPage() {
                 displayName: userDetails.fullName,
             });
 
-            await setDoc(doc(firestore, "users", user.uid), {
+            const userData: any = {
                 fullName: userDetails.fullName,
                 email: userDetails.email,
                 cnic: userDetails.cnic,
@@ -173,7 +179,13 @@ export default function RegisterPage() {
                 dob: userDetails.dob,
                 address1: userDetails.address1,
                 address2: userDetails.address2,
-            });
+            };
+
+            if (!userDetails.cnicFile) {
+                delete userData.cnicFile;
+            }
+
+            await setDoc(doc(firestore, "users", user.uid), userData);
 
             toast({
                 title: "Registration Successful!",
@@ -457,3 +469,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    
