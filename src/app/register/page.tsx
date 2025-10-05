@@ -8,7 +8,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Info, ShieldCheck, Eye, EyeOff, Mail, KeyRound } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { setDoc, doc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { setDoc, doc, collection, addDoc, serverTimestamp, getDocs, query, where, deleteDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +54,7 @@ const detailsSchema = z.object({
     }),
     address1: z.string().min(5, "Address is required"),
     address2: z.string().optional(),
-    cnicFile: z.any().optional(),
+    cnicFile: z.instanceof(File).optional(),
   });
 
 const passwordSchema = z.object({
@@ -118,14 +120,10 @@ export default function RegisterPage() {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         const pendingUserData: any = {
-            ...values,
+            email: values.email,
             otp: otp,
             createdAt: serverTimestamp()
         };
-
-        if (!pendingUserData.cnicFile) {
-            delete pendingUserData.cnicFile;
-        }
 
         try {
             await addDoc(collection(firestore, "pending_users"), pendingUserData);
@@ -138,7 +136,7 @@ export default function RegisterPage() {
 
             toast({
                 title: "Verification Code Sent",
-                description: "Please check your email for the 6-digit OTP.",
+                description: "Please check your email for the 6-digit OTP. For now, check the console for the code.",
             });
         } catch (error) {
             console.error("Error creating pending user:", error);
@@ -159,9 +157,23 @@ export default function RegisterPage() {
             });
             return;
         }
+        
+        // Verify OTP
+        const q = query(
+            collection(firestore, "pending_users"),
+            where("email", "==", userDetails.email),
+            where("otp", "==", values.otp)
+        );
 
-        // In a real app, you'd verify the OTP against your backend/firestore
-        console.log("Simulating OTP verification with:", values.otp);
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+            toast({
+                title: "Invalid OTP",
+                description: "The verification code is incorrect or has expired.",
+                variant: "destructive"
+            });
+            return;
+        }
         
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, userDetails.email, values.password);
@@ -171,21 +183,31 @@ export default function RegisterPage() {
                 displayName: userDetails.fullName,
             });
 
-            const userData: any = {
+            let cnicFileUrl = "";
+            if (userDetails.cnicFile) {
+                const storage = getStorage();
+                const storageRef = ref(storage, `users/${user.uid}/cnic.jpg`);
+                await uploadBytes(storageRef, userDetails.cnicFile);
+                cnicFileUrl = await getDownloadURL(storageRef);
+            }
+
+            const userData = {
                 fullName: userDetails.fullName,
                 email: userDetails.email,
                 cnic: userDetails.cnic,
                 phone: userDetails.phone,
                 dob: userDetails.dob,
                 address1: userDetails.address1,
-                address2: userDetails.address2,
+                address2: userDetails.address2 || "",
+                cnicFileUrl: cnicFileUrl,
             };
 
-            if (!userDetails.cnicFile) {
-                delete userData.cnicFile;
-            }
-
             await setDoc(doc(firestore, "users", user.uid), userData);
+            
+            // Cleanup pending user doc
+            snapshot.forEach(async (docSnap) => {
+                await deleteDoc(doc(db, "pending_users", docSnap.id));
+            });
 
             toast({
                 title: "Registration Successful!",
@@ -200,6 +222,8 @@ export default function RegisterPage() {
             });
         }
     }
+    
+    const { register, ...rest } = detailsForm.register("cnicFile");
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4">
@@ -286,18 +310,30 @@ export default function RegisterPage() {
                                     </FormItem>
                                 )}
                             />
-                            <FormField
+                             <FormField
                                 control={detailsForm.control}
                                 name="cnicFile"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>CNIC Upload (Optional)</FormLabel>
-                                        <FormControl>
-                                            <Input type="file" className="pt-2 text-sm" />
-                                        </FormControl>
-                                        <FormDescription>Upload a scan of your CNIC.</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
+                                <FormItem>
+                                    <FormLabel>CNIC Upload (Optional)</FormLabel>
+                                    <FormControl>
+                                    <Input
+                                        type="file"
+                                        className="pt-2 text-sm"
+                                        accept="image/*"
+                                        {...register}
+                                        onChange={(event) => {
+                                        field.onChange(
+                                            event.target.files ? event.target.files[0] : null
+                                        );
+                                        }}
+                                    />
+                                    </FormControl>
+                                    <FormDescription>
+                                    Upload a scan of your CNIC.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
                                 )}
                             />
                         </div>
