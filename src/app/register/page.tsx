@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Info, ShieldCheck, Eye, EyeOff, Mail, KeyRound } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -104,14 +104,44 @@ export default function RegisterPage() {
     });
 
     async function onDetailsSubmit(values: DetailsFormValues) {
+        if (!firestore) {
+            toast({
+                title: "Error",
+                description: "Database connection not available.",
+                variant: "destructive",
+            });
+            return;
+        }
+        
         setUserDetails(values);
-        setStep(2);
-        // In a real app, you would call your backend/cloud function here to send the OTP
-        console.log("Simulating OTP sending for:", values.email);
-        toast({
-            title: "Verification Code Sent",
-            description: "Please check your email for the 6-digit OTP.",
-        });
+        
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        try {
+            await addDoc(collection(firestore, "pending_users"), {
+                ...values,
+                otp: otp,
+                createdAt: serverTimestamp()
+            });
+
+            // In a real app, a Cloud Function would listen to this document creation
+            // and send an email with the OTP.
+            console.log(`Generated OTP for ${values.email}: ${otp}`);
+
+            setStep(2);
+
+            toast({
+                title: "Verification Code Sent",
+                description: "Please check your email for the 6-digit OTP.",
+            });
+        } catch (error) {
+            console.error("Error creating pending user:", error);
+            toast({
+                title: "Error",
+                description: "Could not start the registration process. Please try again.",
+                variant: "destructive",
+            });
+        }
     }
 
     async function onPasswordSubmit(values: PasswordFormValues) {
@@ -427,5 +457,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    
