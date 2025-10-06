@@ -56,7 +56,10 @@ export default function ProfilePage() {
     const { data: profileData, loading: profileLoading } = useDoc<ProfileData>(profileDocRef, {
         onSuccess: (data) => {
             if (data) {
-                form.reset(data);
+                form.reset({
+                    ...data,
+                    email: user?.email || data.email, // Prioritize auth email
+                });
                 if (data.avatar) {
                     setAvatarPreview(data.avatar);
                 } else if (user?.photoURL) {
@@ -73,6 +76,12 @@ export default function ProfilePage() {
             }
         }
     });
+
+    useEffect(() => {
+        if (user && !form.getValues('email')) {
+            form.setValue('email', user.email || '');
+        }
+    }, [user, form]);
 
     const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -160,12 +169,12 @@ export default function ProfilePage() {
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">
-                            <AvatarImage src={avatarPreview || `https://api.dicebear.com/8.x/initials/svg?seed=${currentUser.email}`} alt={currentUser.fullName} />
+                            <AvatarImage src={avatarPreview || user?.photoURL || `https://api.dicebear.com/8.x/initials/svg?seed=${currentUser.email}`} alt={currentUser.fullName} />
                             <AvatarFallback>{userInitials}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-1">
-                            <CardTitle className="text-2xl font-headline text-primary">{currentUser.fullName}</CardTitle>
-                            <CardDescription>{currentUser.email}</CardDescription>
+                            <CardTitle className="text-2xl font-headline text-primary">{currentUser.fullName || user?.displayName}</CardTitle>
+                            <CardDescription>{currentUser.email || user?.email}</CardDescription>
                              <input
                                 type="file"
                                 ref={fileInputRef}
@@ -233,8 +242,12 @@ export default function ProfilePage() {
                             </div>
                             
                             <div className="flex justify-end">
-                                <Button type="submit">
-                                    <Save className="mr-2 h-4 w-4" />
+                                <Button type="submit" disabled={form.formState.isSubmitting}>
+                                    {form.formState.isSubmitting ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Save className="mr-2 h-4 w-4" />
+                                    )}
                                     Save Changes
                                 </Button>
                             </div>
