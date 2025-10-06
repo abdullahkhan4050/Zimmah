@@ -87,8 +87,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-green-100 via-blue-50 to-orange-50 p-4">
       <div className="flex w-full max-w-4xl flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
-        <header className="flex flex-col items-center text-center md:items-start md:text-left w-full max-w-md">
-          <ZimmahLogo className="h-36 w-36 mb-4" />
+        <header className="flex flex-col items-center text-center w-full max-w-md">
+          <ZimmahLogo className="h-48 w-48 mb-4" />
           <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary">
             Zimmah
           </h1>
