@@ -123,10 +123,11 @@ export default function RegisterPage() {
             const pendingUsersCollection = collection(firestore, "pending_users");
             const newDocRef = doc(pendingUsersCollection); // Create a new doc with a unique ID
 
+            const { cnicFile, ...detailsToSave } = values;
+
             const pendingUserData = {
-                email: values.email,
+                ...detailsToSave,
                 otp: otp,
-                fullName: values.fullName,
                 createdAt: serverTimestamp()
             };
 
@@ -505,5 +506,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    
