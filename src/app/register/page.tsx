@@ -223,7 +223,7 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4">
       <div className="w-full max-w-2xl space-y-6">
         <header className="flex flex-col items-center text-center">
-          <ZimmahLogo className="h-36 w-36 mb-4" />
+          <ZimmahLogo className="h-44 w-auto mb-4" />
           <h1 className="text-3xl md:text-4xl font-headline font-bold text-primary">
             Create Your Account
           </h1>
