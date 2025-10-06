@@ -5,9 +5,11 @@ import sgMail from "@sendgrid/mail";
 
 admin.initializeApp();
 
-// Set SendGrid API Key from Firebase environment
-// In your terminal, run: firebase functions:config:set sendgrid.key="YOUR_SENDGRID_API_KEY"
-sgMail.setApiKey(functions.config().sendgrid.key);
+// Set SendGrid API Key directly.
+// IMPORTANT: For better security, it's recommended to store this key in Firebase environment configuration.
+// Run: firebase functions:config:set sendgrid.key="YOUR_SENDGRID_API_KEY"
+// And then use: sgMail.setApiKey(functions.config().sendgrid.key);
+sgMail.setApiKey("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");
 
 // Function: trigger when new pending_users doc is created
 export const sendOtpEmail = functions.firestore
@@ -60,7 +62,7 @@ The Zimmah Team`;
       to: email,
       from: {
         name: "Zimmah",
-        email: "verification@zimmah.com", // This must be a verified sender in SendGrid
+        email: "naiveforce2@gmail.com", // This must be a verified sender in SendGrid
       },
       subject: "Zimmah Account Verification",
       text: textContent,
