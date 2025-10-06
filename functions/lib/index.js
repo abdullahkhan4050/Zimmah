@@ -67,7 +67,7 @@ The Zimmah Team`;
         console.log(`✅ OTP email sent to ${email}`);
     }
     catch (error) {
-        console.error("❌ Error sending email:", error);
+        console.error("❌ Error sending email:", error.toString());
         if (error.response) {
             console.error("Error Body:", error.response.body);
         }
