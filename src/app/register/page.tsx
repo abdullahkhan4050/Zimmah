@@ -122,8 +122,14 @@ export default function RegisterPage() {
         const pendingUserData: any = {
             email: values.email,
             otp: otp,
+            fullName: values.fullName,
             createdAt: serverTimestamp()
         };
+
+        if (values.cnicFile) {
+            pendingUserData.cnicFile = values.cnicFile;
+        }
+
 
         try {
             await addDoc(collection(firestore, "pending_users"), pendingUserData);
@@ -136,7 +142,7 @@ export default function RegisterPage() {
 
             toast({
                 title: "Verification Code Sent",
-                description: "Please check your email for the 6-digit OTP. For now, check the console for the code.",
+                description: "Please check your email for the 6-digit OTP.",
             });
         } catch (error) {
             console.error("Error creating pending user:", error);
@@ -206,7 +212,7 @@ export default function RegisterPage() {
             
             // Cleanup pending user doc
             snapshot.forEach(async (docSnap) => {
-                await deleteDoc(doc(db, "pending_users", docSnap.id));
+                await deleteDoc(doc(firestore, "pending_users", docSnap.id));
             });
 
             toast({
@@ -505,5 +511,7 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    
 
     
