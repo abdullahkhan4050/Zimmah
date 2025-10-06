@@ -14,7 +14,7 @@ sgMail.setApiKey("SG.lgvflF2BTTqL-TSHGA0aZw.Q-KUo-ThjzTPxQ-yluqExsT8hhdCiND6parn
 // Function: trigger when new pending_users doc is created
 export const sendOtpEmail = functions.firestore
   .document("pending_users/{userId}")
-  .onCreate(async (snap) => {
+  .onCreate(async (snap: functions.firestore.QueryDocumentSnapshot) => {
     const data = snap.data();
     if (!data) {
         console.error("No data associated with the event");
@@ -73,9 +73,9 @@ The Zimmah Team`;
       await sgMail.send(msg);
       console.log(`✅ OTP email sent to ${email}`);
     } catch (error: any) {
-      console.error("❌ Error sending email:", error);
+      console.error("❌ Error sending email:", error.toString());
       if (error.response) {
-        console.error("Error Body:", error.response.body)
+        console.error("Error Body:", error.response.body);
       }
     }
   });

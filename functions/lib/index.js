@@ -68,6 +68,9 @@ The Zimmah Team`;
     }
     catch (error) {
         console.error("❌ Error sending email:", error);
+        if (error.response) {
+            console.error("Error Body:", error.response.body);
+        }
     }
 });
 //# sourceMappingURL=index.js.map
