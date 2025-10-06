@@ -72,7 +72,10 @@ The Zimmah Team`;
     try {
       await sgMail.send(msg);
       console.log(`✅ OTP email sent to ${email}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error sending email:", error);
+      if (error.response) {
+        console.error("Error Body:", error.response.body)
+      }
     }
   });
