@@ -83,12 +83,12 @@ export default function DashboardLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <ZimmahLogo className="w-10 h-10 text-primary" />
             <span className="font-headline text-lg font-semibold text-primary">
               Zimmah
             </span>
-          </div>
+          </Link>
         </SidebarHeader>
         <SidebarContent>
            <SidebarMenu>
