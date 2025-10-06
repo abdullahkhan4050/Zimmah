@@ -1,0 +1,15 @@
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow users to upload their own CNIC image.
+    // The file must be an image and smaller than 2MB.
+    match /users/{userId}/cnic.jpg {
+      allow write: if request.auth != null && request.auth.uid == userId
+                    && request.resource.size < 2 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

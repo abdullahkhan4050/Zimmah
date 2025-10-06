@@ -128,7 +128,6 @@ export default function RegisterPage() {
                 createdAt: serverTimestamp()
             };
             
-            // The addDoc function will automatically generate a unique ID.
             await addDoc(collection(firestore, "pending_users"), pendingUserData);
 
             setStep(2);
@@ -500,5 +499,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    

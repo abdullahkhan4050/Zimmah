@@ -1,44 +1,26 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the user is the owner of the document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    // pending_users: Allow anyone to create for registration, but deny read/update/delete from the client.
+    // The Cloud Function will have admin access to read this.
+    match /pending_users/{docId} {
+      allow create: if true;
+      allow read, update, delete: if false;
     }
 
-    // By default, deny all reads and writes
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // USERS
-    // A user can read/update their own profile and anyone can create a user profile (for registration)
+    // users: Allow users to read and update their own profile.
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
-      allow create: if request.auth.uid != null;
-    }
-    
-    // WASIYAT (WILLS)
-    // A user can list and create their own wasiyat records
-    match /wasiyat/{wasiyatId} {
-       allow list, create: if isOwner(request.resource.data.userId);
-       allow read: if isOwner(resource.data.userId);
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
     }
 
-    // QARZ (DEBTS)
-    // A user can list and create their own qarz records
-    match /qarz/{qarzId} {
-      allow list, create: if isOwner(request.resource.data.userId);
-      allow read: if isOwner(resource.data.userId);
-    }
-
-    // AMANAT (TRUSTS)
-    // A user can list and create their own amanat records
-    match /amanat/{amanatId} {
-      allow list, create: if isOwner(request.resource.data.userId);
-      allow read: if isOwner(resource.data.userId);
+    // wasiyat, qarz, amanat: Allow full access only to the user who owns the record.
+    match /{collection}/{docId} {
+      allow read, write, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
   }
 }
