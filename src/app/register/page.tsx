@@ -120,18 +120,16 @@ export default function RegisterPage() {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         try {
-            const pendingUsersCollection = collection(firestore, "pending_users");
-            const newDocRef = doc(pendingUsersCollection); // Create a new doc with a unique ID
-
-            const { cnicFile, ...detailsToSave } = values;
-
+            // This is the correct data to save - notice cnicFile is excluded.
             const pendingUserData = {
-                ...detailsToSave,
+                email: values.email,
+                fullName: values.fullName,
                 otp: otp,
                 createdAt: serverTimestamp()
             };
-
-            await setDoc(newDocRef, pendingUserData);
+            
+            // The addDoc function will automatically generate a unique ID.
+            await addDoc(collection(firestore, "pending_users"), pendingUserData);
 
             setStep(2);
 
@@ -139,11 +137,11 @@ export default function RegisterPage() {
                 title: "Verification Code Sent",
                 description: "Please check your email for the 6-digit OTP.",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error creating pending user:", error);
             toast({
                 title: "Error",
-                description: "Could not start the registration process. Please try again.",
+                description: error.message || "Could not start the registration process. Please try again.",
                 variant: "destructive",
             });
         }
@@ -192,14 +190,9 @@ export default function RegisterPage() {
                 cnicFileUrl = await getDownloadURL(storageRef);
             }
 
+            const { cnicFile, ...detailsToSave } = userDetails;
             const userData = {
-                fullName: userDetails.fullName,
-                email: userDetails.email,
-                cnic: userDetails.cnic,
-                phone: userDetails.phone,
-                dob: userDetails.dob,
-                address1: userDetails.address1,
-                address2: userDetails.address2 || "",
+                ...detailsToSave,
                 cnicFileUrl: cnicFileUrl,
             };
 
@@ -506,3 +499,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    

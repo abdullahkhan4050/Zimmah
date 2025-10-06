@@ -5,11 +5,12 @@ import sgMail from "@sendgrid/mail";
 
 admin.initializeApp();
 
-// Set SendGrid API Key directly.
-// IMPORTANT: For better security, it's recommended to store this key in Firebase environment configuration.
-// Run: firebase functions:config:set sendgrid.key="YOUR_SENDGRID_API_KEY"
-// And then use: sgMail.setApiKey(functions.config().sendgrid.key);
-sgMail.setApiKey("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");
+// It's recommended to store the API key in Firebase environment configuration
+// for better security. You can set it by running:
+// firebase functions:config:set sendgrid.key="YOUR_SENDGRID_API_KEY"
+// and then use: functions.config().sendgrid.key
+const SENDGRID_API_KEY = "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";
+sgMail.setApiKey(SENDGRID_API_KEY);
 
 // Function: trigger when new pending_users doc is created
 export const sendOtpEmail = functions.firestore
@@ -74,8 +75,11 @@ The Zimmah Team`;
       console.log(`✅ OTP email sent to ${email}`);
     } catch (error: any) {
       console.error("❌ Error sending email:", error.toString());
+      // SendGrid provides detailed error info in the response body
       if (error.response) {
         console.error("Error Body:", error.response.body);
       }
     }
   });
+
+    
