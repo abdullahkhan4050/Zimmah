@@ -4,7 +4,7 @@ import Image from "next/image";
 export function ZimmahLogo(props: SVGProps<SVGSVGElement>) {
   return (
     <Image
-      src="https://i.postimg.cc/NfC213z7/zimmah-logo.png"
+      src="https://i.postimg.cc/9Q2yGq3V/ZIMMAH-f.png"
       alt="Zimmah Logo"
       width={112}
       height={112}
