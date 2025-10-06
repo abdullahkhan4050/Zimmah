@@ -119,15 +119,18 @@ export default function RegisterPage() {
         
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        const pendingUserData = {
-            email: values.email,
-            otp: otp,
-            fullName: values.fullName,
-            createdAt: serverTimestamp()
-        };
-
         try {
-            await addDoc(collection(firestore, "pending_users"), pendingUserData);
+            const pendingUsersCollection = collection(firestore, "pending_users");
+            const newDocRef = doc(pendingUsersCollection); // Create a new doc with a unique ID
+
+            const pendingUserData = {
+                email: values.email,
+                otp: otp,
+                fullName: values.fullName,
+                createdAt: serverTimestamp()
+            };
+
+            await setDoc(newDocRef, pendingUserData);
 
             setStep(2);
 
@@ -502,3 +505,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    
