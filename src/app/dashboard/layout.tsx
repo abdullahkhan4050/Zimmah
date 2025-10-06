@@ -13,6 +13,7 @@ import {
   MessageSquare,
   ShieldCheck,
   User,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -41,7 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/firebase";
+import { useAuth, useUser as useFirebaseUser } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -62,14 +63,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { user } = useAuth();
   const auth = useAuth();
+  const { user, loading: userLoading } = useFirebaseUser();
   const router = useRouter();
-
-  const userName = user?.displayName || "Test User";
-  const userEmail = user?.email || "user@example.com";
-  const userInitials = userName.split(' ').map(n => n[0]).join('');
-  const notificationCount = 0;
 
   const handleLogout = async () => {
     if (auth) {
@@ -77,6 +73,19 @@ export default function DashboardLayout({
       router.push('/');
     }
   };
+
+  if (userLoading) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  const userName = user?.displayName || "Test User";
+  const userEmail = user?.email || "user@example.com";
+  const userInitials = userName ? userName.split(' ').map(n => n[0]).join('') : '';
+  const notificationCount = 0;
 
 
   return (
