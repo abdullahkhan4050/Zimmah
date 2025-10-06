@@ -119,24 +119,15 @@ export default function RegisterPage() {
         
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        const pendingUserData: any = {
+        const pendingUserData = {
             email: values.email,
             otp: otp,
             fullName: values.fullName,
             createdAt: serverTimestamp()
         };
 
-        if (values.cnicFile) {
-            pendingUserData.cnicFile = values.cnicFile;
-        }
-
-
         try {
             await addDoc(collection(firestore, "pending_users"), pendingUserData);
-
-            // In a real app, a Cloud Function would listen to this document creation
-            // and send an email with the OTP.
-            console.log(`Generated OTP for ${values.email}: ${otp}`);
 
             setStep(2);
 
@@ -511,7 +502,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    
-
-    
