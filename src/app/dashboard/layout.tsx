@@ -208,7 +208,7 @@ export default function DashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="rounded-full">
                   <Avatar>
-                    <AvatarImage src={user?.photoURL || `https://api.dicebear.com/8.x/initials/svg?seed=${userEmail}`} alt={userName} />
+                    <AvatarImage src={user?.photoURL ?? undefined} alt={userName} />
                     <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
                   <span className="sr-only">Toggle user menu</span>
