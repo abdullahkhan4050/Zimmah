@@ -193,6 +193,7 @@ export default function RegisterPage() {
             const { cnicFile, ...detailsToSave } = userDetails;
             const userData = {
                 ...detailsToSave,
+                uid: user.uid,
                 cnicFileUrl: cnicFileUrl,
             };
 
