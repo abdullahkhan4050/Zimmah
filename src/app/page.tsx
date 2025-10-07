@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   User,
   BookUser,
-  HeartHandshake,
   UserCog,
   ShieldCheck,
   Eye,
@@ -29,7 +28,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "fire
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
-type Role = "User" | "Scholar" | "Witness" | "Admin";
+type Role = "User" | "Scholar" | "Admin";
 
 const roles = [
   {
@@ -41,11 +40,6 @@ const roles = [
     name: "Scholar",
     icon: BookUser,
     description: "Review and verify Shariah compliance.",
-  },
-  {
-    name: "Witness",
-    icon: HeartHandshake,
-    description: "Witness and verify transactions.",
   },
   {
     name: "Admin",
