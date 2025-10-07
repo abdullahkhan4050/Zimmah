@@ -55,6 +55,8 @@ const roles: { name: Role; icon: React.ElementType; description: string; classNa
   },
 ];
 
+const ADMIN_EMAIL = "admin@zimmah.com";
+
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [email, setEmail] = useState("");
@@ -74,7 +76,11 @@ export default function LoginPage() {
         title: "Login Successful!",
         description: "Redirecting you to the dashboard...",
       });
-      router.push("/dashboard");
+      if (email === ADMIN_EMAIL) {
+        router.push("/dashboard/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -106,32 +112,47 @@ export default function LoginPage() {
                   Select Your Role
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {roles.map((role) => (
-                  <button
-                    key={role.name}
-                    onClick={() => !role.comingSoon && setSelectedRole(role.name as Role)}
-                    disabled={role.comingSoon}
-                    className={cn(
-                        "p-4 border rounded-lg text-center transition-all group relative",
-                        role.className,
-                        role.comingSoon
-                        ? "cursor-not-allowed opacity-60"
-                        : "hover:bg-accent/10 hover:border-primary"
-                    )}
-                  >
-                    {role.comingSoon && (
-                        <Badge variant="secondary" className="absolute -top-2 right-2">Coming Soon</Badge>
-                    )}
-                    <role.icon className="h-10 w-10 mx-auto text-primary mb-2" />
-                    <h3 className="font-semibold text-lg font-headline text-foreground">
-                      {role.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground font-body">
-                      {role.description}
-                    </p>
-                  </button>
-                ))}
+              <CardContent className="grid gap-4">
+                 <div className="grid grid-cols-1 gap-4">
+                    <button
+                        key="User"
+                        onClick={() => setSelectedRole("User")}
+                        className={cn(
+                            "p-4 border rounded-lg text-center transition-all group relative hover:bg-accent/10 hover:border-primary"
+                        )}
+                    >
+                        <User className="h-10 w-10 mx-auto text-primary mb-2" />
+                        <h3 className="font-semibold text-lg font-headline text-foreground">User</h3>
+                        <p className="text-sm text-muted-foreground font-body">Manage your debts, trusts, and will.</p>
+                    </button>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    {roles.filter(r => r.name !== 'User').map((role) => (
+                      <button
+                        key={role.name}
+                        onClick={() => !role.comingSoon && setSelectedRole(role.name as Role)}
+                        disabled={role.comingSoon}
+                        className={cn(
+                            "p-4 border rounded-lg text-center transition-all group relative",
+                            role.className,
+                            role.comingSoon
+                            ? "cursor-not-allowed opacity-60"
+                            : "hover:bg-accent/10 hover:border-primary"
+                        )}
+                      >
+                        {role.comingSoon && (
+                            <Badge variant="secondary" className="absolute -top-2 right-2">Coming Soon</Badge>
+                        )}
+                        <role.icon className="h-10 w-10 mx-auto text-primary mb-2" />
+                        <h3 className="font-semibold text-lg font-headline text-foreground">
+                          {role.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground font-body">
+                          {role.description}
+                        </p>
+                      </button>
+                    ))}
+                 </div>
               </CardContent>
             </Card>
           ) : (
@@ -170,12 +191,14 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Link
-                      href="#"
-                      className="text-sm text-muted-foreground hover:underline"
-                    >
-                      Forgot Password?
-                    </Link>
+                     {selectedRole === 'User' && (
+                        <Link
+                            href="#"
+                            className="text-sm text-muted-foreground hover:underline"
+                        >
+                            Forgot Password?
+                        </Link>
+                     )}
                   </div>
                   
                   <Button className="w-full" type="submit">
@@ -184,12 +207,14 @@ export default function LoginPage() {
                   </Button>
                   
                 </form>
-                <div className="mt-4 text-center text-sm">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/register" className="underline text-primary">
-                    Sign up
-                  </Link>
-                </div>
+                 {selectedRole === 'User' && (
+                    <div className="mt-4 text-center text-sm">
+                      Don&apos;t have an account?{" "}
+                      <Link href="/register" className="underline text-primary">
+                        Sign up
+                      </Link>
+                    </div>
+                )}
               </CardContent>
             </Card>
           )}

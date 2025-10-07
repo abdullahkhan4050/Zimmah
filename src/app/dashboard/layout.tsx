@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   User,
   Loader2,
+  LayoutDashboard,
 } from "lucide-react";
 
 import {
@@ -57,6 +58,8 @@ const toolsItems = [
     { href: "/dashboard/chatbot", label: "Chatbot", icon: MessageSquare },
 ];
 
+const ADMIN_EMAIL = "admin@zimmah.com";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -66,6 +69,10 @@ export default function DashboardLayout({
   const auth = useAuth();
   const { user, loading: userLoading } = useFirebaseUser();
   const router = useRouter();
+
+  if (pathname.startsWith('/dashboard/admin')) {
+      return <>{children}</>;
+  }
 
   const handleLogout = async () => {
     if (auth) {
@@ -86,6 +93,7 @@ export default function DashboardLayout({
   const userEmail = user?.email || "user@example.com";
   const userInitials = userName ? userName.split(' ').map(n => n[0]).join('') : '';
   const notificationCount = 0;
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
 
   return (
@@ -150,6 +158,22 @@ export default function DashboardLayout({
               ))}
             </SidebarMenu>
           </SidebarGroup>
+
+          {isAdmin && (
+             <SidebarGroup>
+                <SidebarGroupLabel>Admin</SidebarGroupLabel>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <Link href="/dashboard/admin">
+                            <SidebarMenuButton isActive={pathname.startsWith('/dashboard/admin')} tooltip="Admin Panel">
+                                <LayoutDashboard />
+                                <span>Admin Panel</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarGroup>
+          )}
 
         </SidebarContent>
         <SidebarFooter>

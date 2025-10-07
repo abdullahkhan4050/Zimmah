@@ -4,23 +4,30 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // pending_users: Allow anyone to create for registration, but deny read/update/delete from the client.
-    // The Cloud Function will have admin access to read this.
-    match /pending_users/{docId} {
-      allow create: if true;
-      allow read, update, delete: if false;
+    // Helper function to check for admin role
+    function isAdmin() {
+      // In a real app, this would check for a custom claim.
+      // For now, we'll check the user's email.
+      return request.auth.token.email == "admin@zimmah.com";
     }
 
-    // users: Allow users to read and update their own profile.
+    // Users can read and write their own profile data.
+    // Admins can read anyone's profile data.
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow read: if request.auth.uid == userId || isAdmin();
+      allow write: if request.auth.uid == userId;
     }
 
-    // wasiyat, qarz, amanat: Allow full access only to the user who owns the record.
+    // Users can create their own wasiyat, qarz, and amanat records.
     match /{collection}/{docId} {
-      allow read, write, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Users can only read their own records.
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Pending users collection for OTP verification
+    match /pending_users/{userId} {
+        allow read, write: if request.auth == null; // Allow creation before user is authenticated
     }
   }
 }
