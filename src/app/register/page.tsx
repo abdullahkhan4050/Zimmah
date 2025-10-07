@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Info, ShieldCheck, Eye, EyeOff, Mail, KeyRound } from "lucide-react";
+import { Info, ShieldCheck, Eye, EyeOff, Mail, KeyRound, Smartphone } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { setDoc, doc, collection, addDoc, serverTimestamp, getDocs, query, where, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -122,7 +122,7 @@ export default function RegisterPage() {
         try {
             const pendingUserData = {
                 email: values.email,
-                fullName: values.fullName,
+                phone: values.phone,
                 otp: otp,
                 createdAt: serverTimestamp()
             };
@@ -133,7 +133,7 @@ export default function RegisterPage() {
 
             toast({
                 title: "Verification Code Sent",
-                description: "Please check your email for the 6-digit OTP.",
+                description: "Please check your phone for the 6-digit OTP.",
             });
         } catch (error: any) {
             console.error("Error creating pending user:", error);
@@ -159,6 +159,7 @@ export default function RegisterPage() {
         const q = query(
             collection(firestore, "pending_users"),
             where("email", "==", userDetails.email),
+            where("phone", "==", userDetails.phone),
             where("otp", "==", values.otp)
         );
 
@@ -356,16 +357,16 @@ export default function RegisterPage() {
                 <>
                 <CardHeader>
                     <CardTitle className="font-headline text-primary">Step 2: Verification</CardTitle>
-                    <CardDescription>Enter the code sent to your email and set your password.</CardDescription>
+                    <CardDescription>Enter the code sent to your phone and set your password.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...passwordForm}>
                         <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
                             <Alert>
-                                <Mail className="h-4 w-4" />
-                                <AlertTitle>Check your email!</AlertTitle>
+                                <Smartphone className="h-4 w-4" />
+                                <AlertTitle>Check your phone!</AlertTitle>
                                 <AlertDescription>
-                                    We've sent a 6-digit verification code to <strong>{userDetails?.email}</strong>.
+                                    We've sent a 6-digit verification code to <strong>{userDetails?.phone}</strong>.
                                 </AlertDescription>
                             </Alert>
                              <FormField
@@ -498,3 +499,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    
