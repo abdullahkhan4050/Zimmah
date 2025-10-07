@@ -28,10 +28,11 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "fire
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 type Role = "User" | "Scholar" | "Admin";
 
-const roles = [
+const roles: { name: Role; icon: React.ElementType; description: string; className: string; comingSoon?: boolean }[] = [
   {
     name: "User",
     icon: User,
@@ -42,13 +43,15 @@ const roles = [
     name: "Scholar",
     icon: BookUser,
     description: "Review and verify Shariah compliance.",
-    className: ""
+    className: "",
+    comingSoon: true,
   },
   {
     name: "Admin",
     icon: UserCog,
     description: "System administration and oversight.",
-    className: ""
+    className: "",
+    comingSoon: true,
   },
 ];
 
@@ -107,9 +110,19 @@ export default function LoginPage() {
                 {roles.map((role) => (
                   <button
                     key={role.name}
-                    onClick={() => setSelectedRole(role.name as Role)}
-                    className={cn("p-4 border rounded-lg text-center hover:bg-accent/10 hover:border-primary transition-all group", role.className)}
+                    onClick={() => !role.comingSoon && setSelectedRole(role.name as Role)}
+                    disabled={role.comingSoon}
+                    className={cn(
+                        "p-4 border rounded-lg text-center transition-all group relative",
+                        role.className,
+                        role.comingSoon
+                        ? "cursor-not-allowed opacity-60"
+                        : "hover:bg-accent/10 hover:border-primary"
+                    )}
                   >
+                    {role.comingSoon && (
+                        <Badge variant="secondary" className="absolute -top-2 right-2">Coming Soon</Badge>
+                    )}
                     <role.icon className="h-10 w-10 mx-auto text-primary mb-2" />
                     <h3 className="font-semibold text-lg font-headline text-foreground">
                       {role.name}
