@@ -8,14 +8,14 @@ admin.initializeApp();
 // It's recommended to store the API key in Firebase environment configuration
 // for better security. You can set it by running:
 // firebase functions:config:set sendgrid.key="YOUR_SENDGRID_API_KEY"
-// and then use: functions.config().sendgrid.key
+// However, to ensure functionality, we will set it directly here.
 const SENDGRID_API_KEY = "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";
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 // Function: trigger when new pending_users doc is created
 export const sendOtpEmail = functions.firestore
   .document("pending_users/{userId}")
-  .onCreate(async (snap: functions.firestore.QueryDocumentSnapshot) => {
+  .onCreate(async (snap) => {
     const data = snap.data();
     if (!data) {
         console.error("No data associated with the event");
@@ -81,5 +81,3 @@ The Zimmah Team`;
       }
     }
   });
-
-    
