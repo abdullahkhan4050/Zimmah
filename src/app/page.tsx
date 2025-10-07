@@ -55,7 +55,7 @@ const roles: { name: Role; icon: React.ElementType; description: string; classNa
   },
 ];
 
-const ADMIN_EMAIL = "admin@zimmah.com";
+const ADMIN_EMAIL = "naiveforce2@gmail.com";
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);

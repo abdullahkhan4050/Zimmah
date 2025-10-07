@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/firebase/auth/use-user";
 
 // Simple check for admin role based on email. In a real app, this should be a custom claim.
-const ADMIN_EMAIL = "admin@zimmah.com";
+const ADMIN_EMAIL = "naiveforce2@gmail.com";
 
 const adminNavItems = [
   { href: "/dashboard/admin", label: "Dashboard", icon: LayoutDashboard },
