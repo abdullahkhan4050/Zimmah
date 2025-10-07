@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Loader2 } from "lucide-react";
+import { LayoutDashboard, Users, Loader2, Database, Settings, LifeBuoy } from "lucide-react";
 
 import { useAuth } from "@/firebase";
 import { useEffect } from "react";
@@ -16,6 +16,9 @@ const ADMIN_EMAIL = "admin@zimmah.com";
 const adminNavItems = [
   { href: "/dashboard/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/admin/users", label: "User Management", icon: Users },
+  { href: "/dashboard/admin/content", label: "Content Management", icon: Database, comingSoon: true },
+  { href: "/dashboard/admin/config", label: "System Configuration", icon: Settings, comingSoon: true },
+  { href: "/dashboard/admin/support", label: "Support Tools", icon: LifeBuoy, comingSoon: true },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -59,13 +62,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {adminNavItems.map((item) => (
                 <Link
                   key={item.label}
-                  href={item.href}
+                  href={item.comingSoon ? "#" : item.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${
-                    pathname === item.href ? "bg-muted text-primary" : "text-muted-foreground"
-                  }`}
+                    pathname === item.href && !item.comingSoon ? "bg-muted text-primary" : "text-muted-foreground"
+                  } ${item.comingSoon ? "cursor-not-allowed opacity-50" : ""}`}
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
+                   {item.comingSoon && <span className="ml-auto text-xs text-muted-foreground">(Soon)</span>}
                 </Link>
               ))}
             </nav>
