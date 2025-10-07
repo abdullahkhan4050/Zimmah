@@ -8,6 +8,7 @@ import { LayoutDashboard, Users, Loader2 } from "lucide-react";
 import { useAuth } from "@/firebase";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/firebase/auth/use-user";
 
 // Simple check for admin role based on email. In a real app, this should be a custom claim.
 const ADMIN_EMAIL = "admin@zimmah.com";
@@ -19,12 +20,12 @@ const adminNavItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
+  const { user, loading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && user?.email !== ADMIN_EMAIL) {
+    if (!loading && (!user || user.email !== ADMIN_EMAIL)) {
       toast({
         title: "Access Denied",
         description: "You do not have permission to view this page.",
@@ -34,10 +35,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [user, loading, router, toast]);
   
-  if (loading || user?.email !== ADMIN_EMAIL) {
+  if (loading || !user || user.email !== ADMIN_EMAIL) {
      return (
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-screen items-center justify-center bg-background">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-2">Verifying admin access...</p>
         </div>
     );
   }
