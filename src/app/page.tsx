@@ -27,6 +27,7 @@ import { useAuth } from "@/firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 type Role = "User" | "Scholar" | "Admin";
 
@@ -35,16 +36,19 @@ const roles = [
     name: "User",
     icon: User,
     description: "Manage your debts, trusts, and will.",
+    className: "sm:col-span-2"
   },
   {
     name: "Scholar",
     icon: BookUser,
     description: "Review and verify Shariah compliance.",
+    className: ""
   },
   {
     name: "Admin",
     icon: UserCog,
     description: "System administration and oversight.",
+    className: ""
   },
 ];
 
@@ -104,7 +108,7 @@ export default function LoginPage() {
                   <button
                     key={role.name}
                     onClick={() => setSelectedRole(role.name as Role)}
-                    className="p-4 border rounded-lg text-center hover:bg-accent/10 hover:border-primary transition-all group"
+                    className={cn("p-4 border rounded-lg text-center hover:bg-accent/10 hover:border-primary transition-all group", role.className)}
                   >
                     <role.icon className="h-10 w-10 mx-auto text-primary mb-2" />
                     <h3 className="font-semibold text-lg font-headline text-foreground">
