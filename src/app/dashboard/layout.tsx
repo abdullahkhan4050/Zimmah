@@ -58,7 +58,7 @@ const toolsItems = [
     { href: "/dashboard/chatbot", label: "Chatbot", icon: MessageSquare },
 ];
 
-const ADMIN_EMAIL = "admin@zimmah.com";
+const ADMIN_EMAIL = "naiveforce2@gmail.com";
 
 export default function DashboardLayout({
   children,
