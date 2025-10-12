@@ -53,9 +53,9 @@ export default function WasiyatPage() {
   const [existingWill, setExistingWill] = useState<WasiyatDoc | null>(null);
 
   const wasiyatQuery = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, "wasiyat"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: wasiyatDocs, loading: wasiyatLoading } = useCollection<WasiyatDoc>(wasiyatQuery, {
       onSuccess: (data) => {
@@ -71,9 +71,9 @@ export default function WasiyatPage() {
   });
 
   const witnessesQuery = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, "witnesses"), where("userId", "==", user.uid));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: witnesses, loading: witnessesLoading } = useCollection<Witness>(witnessesQuery);
 
@@ -186,6 +186,8 @@ export default function WasiyatPage() {
         setWillDraft(null);
         setWriteMode(null);
         setIsEditing(false);
+        aiForm.reset();
+        setManualWill("");
         toast({
             title: "Previous Will Deleted",
             description: "You can now create a new will.",
@@ -228,7 +230,7 @@ export default function WasiyatPage() {
     const newWillContent = willWithoutWitnesses + witnessSection;
 
     setEditedWill(newWillContent);
-    if (!isEditing) {
+    if (!isEditing && willDraft) {
         setIsEditing(true); // Switch to edit mode after assigning witnesses to a non-saved draft
     }
     
@@ -319,13 +321,13 @@ export default function WasiyatPage() {
                 </Card>
             )}
 
-            {writeMode === 'ai' && !isEditing && (
+            {(writeMode === 'ai' || (isEditing && existingWill?.type === 'ai')) && !willDraft && (
                 <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
                             <Sparkles className="text-primary"/> AI Will Assistant
                         </CardTitle>
-                        <Button variant="link" className="p-0 h-auto justify-start" onClick={() => setWriteMode(null)}>&larr; Back to options</Button>
+                        <Button variant="link" className="p-0 h-auto justify-start" onClick={() => {setWriteMode(null); if(existingWill) setIsEditing(false);}}>&larr; Back</Button>
                     </CardHeader>
                     <CardContent>
                         <Form {...aiForm}>
@@ -356,13 +358,13 @@ export default function WasiyatPage() {
                 </Card>
             )}
 
-            {writeMode === 'manual' && !isEditing && (
+            {(writeMode === 'manual' || (isEditing && existingWill?.type === 'manual')) && !willDraft && (
                  <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
                             <Edit className="text-primary"/> Manual Will Editor
                         </CardTitle>
-                         <Button variant="link" className="p-0 h-auto justify-start" onClick={() => setWriteMode(null)}>&larr; Back to options</Button>
+                         <Button variant="link" className="p-0 h-auto justify-start" onClick={() => {setWriteMode(null); if(existingWill) setIsEditing(false);}}>&larr; Back</Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Textarea
@@ -418,7 +420,7 @@ export default function WasiyatPage() {
                         </div>
                     )}
 
-                    {(willDraft || editedWill) && (
+                    {(willDraft || isEditing) && (
                         <div className="space-y-6 flex-1 flex flex-col">
                              <Alert variant="destructive" className="print:hidden">
                                 <AlertTriangle className="h-4 w-4" />
@@ -510,6 +512,5 @@ export default function WasiyatPage() {
     </div>
   );
 }
-    
 
     

@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useEffect, useState, useMemo } from "react";
 import { collection, orderBy, query, where } from "firebase/firestore";
-import { useCollection, useFirestore, useAuth } from "@/firebase";
+import { useCollection, useFirestore, useUser } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -38,26 +38,26 @@ type Amanat = { id: string; item: string; entrustee: string; returnDate: string 
 
 
 export default function DashboardPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const userName = user?.displayName || "User";
     const firestore = useFirestore();
 
     const wasiyatQuery = useMemo(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user?.uid) return null;
         return query(collection(firestore, "wasiyat"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
-    }, [firestore, user]);
+    }, [firestore, user?.uid]);
     const { data: wasiyat, loading: wasiyatLoading } = useCollection<Wasiyat>(wasiyatQuery);
     
     const qarzQuery = useMemo(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user?.uid) return null;
         return query(collection(firestore, "qarz"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
-    }, [firestore, user]);
+    }, [firestore, user?.uid]);
     const { data: qarz, loading: qarzLoading } = useCollection<Qarz>(qarzQuery);
 
     const amanatQuery = useMemo(() => {
-        if (!firestore || !user) return null;
+        if (!firestore || !user?.uid) return null;
         return query(collection(firestore, "amanat"), where("userId", "==", user.uid));
-    }, [firestore, user]);
+    }, [firestore, user?.uid]);
     const { data: amanat, loading: amanatLoading } = useCollection<Amanat>(amanatQuery);
 
     const loading = wasiyatLoading || qarzLoading || amanatLoading;
@@ -241,3 +241,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

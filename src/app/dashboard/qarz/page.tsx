@@ -7,6 +7,7 @@ import * as z from "zod";
 import { BookOpen, CalendarIcon, PlusCircle, FileSignature, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore } from "@/firebase";
+import { useUser, useFirestore } from "@/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -44,7 +45,7 @@ const qarzSchema = z.object({
 export default function QarzPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const form = useForm<z.infer<typeof qarzSchema>>({
     resolver: zodResolver(qarzSchema),
@@ -358,3 +359,5 @@ export default function QarzPage() {
     </div>
   );
 }
+
+    

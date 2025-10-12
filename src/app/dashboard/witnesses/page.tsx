@@ -44,9 +44,9 @@ export default function WitnessesPage() {
   });
 
   const witnessesQuery = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, "witnesses"), where("userId", "==", user.uid));
-  }, [firestore, user]);
+  }, [firestore, user?.uid]);
 
   const { data: witnesses, loading } = useCollection<Witness>(witnessesQuery);
 
@@ -220,3 +220,5 @@ export default function WitnessesPage() {
     </div>
   );
 }
+
+    
