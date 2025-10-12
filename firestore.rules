@@ -1,33 +1,37 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check for admin role
-    function isAdmin() {
-      // In a real app, this would check for a custom claim.
-      // For now, we'll check the user's email.
-      return request.auth.token.email == "admin@zimmah.com";
-    }
-
-    // Users can read and write their own profile data.
-    // Admins can read anyone's profile data.
+    // Allow logged-in users to read and write their own data
     match /users/{userId} {
-      allow read: if request.auth.uid == userId || isAdmin();
-      allow write: if request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Users can create their own wasiyat, qarz, and amanat records.
-    match /{collection}/{docId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Users can only read their own records.
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    // Allow logged-in users to manage their own witnesses
+    match /witnesses/{witnessId} {
+      allow read, write: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Allow logged-in users to manage their own wasiyat
+    match /wasiyat/{wasiyatId} {
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Allow logged-in users to manage their own qarz
+    match /qarz/{qarzId} {
+      allow read, create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Allow logged-in users to manage their own amanat
+    match /amanat/{amanatId} {
+      allow read, create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
 
     // Pending users collection for OTP verification
     match /pending_users/{userId} {
-        allow read, write: if request.auth == null; // Allow creation before user is authenticated
+      allow create; // Anyone can create a pending user doc during signup
+      allow read, delete: if request.auth != null; // Allow cleanup/read by authenticated functions or users
     }
   }
 }
