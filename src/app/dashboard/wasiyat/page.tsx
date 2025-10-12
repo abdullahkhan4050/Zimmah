@@ -6,7 +6,7 @@ import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangl
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { collection, addDoc, serverTimestamp, query, where, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateWillAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -159,23 +159,15 @@ export default function WasiyatPage() {
     
     const docRef = doc(firestore, `users/${user.uid}/wasiyats`, existingWill.id);
     
-    updateDoc(docRef, { will: editedWill })
-        .then(() => {
-            setWillDraft(editedWill);
-            setExistingWill(prev => prev ? { ...prev, will: editedWill } : null);
-            setIsEditing(false);
-            toast({
-                title: "Changes Saved",
-                description: "Your edits to the will have been saved.",
-            });
-        })
-        .catch(error => {
-             errorEmitter.emit("permission-error", new FirestorePermissionError({
-                path: docRef.path,
-                operation: "update",
-                requestResourceData: { will: editedWill },
-            }));
-        });
+    updateDocumentNonBlocking(docRef, { will: editedWill });
+    
+    setWillDraft(editedWill);
+    setExistingWill(prev => prev ? { ...prev, will: editedWill } : null);
+    setIsEditing(false);
+    toast({
+        title: "Changes Saved",
+        description: "Your edits to the will have been saved.",
+    });
   };
 
   const handleRecreate = async () => {
@@ -513,5 +505,3 @@ export default function WasiyatPage() {
     </div>
   );
 }
-
-    
