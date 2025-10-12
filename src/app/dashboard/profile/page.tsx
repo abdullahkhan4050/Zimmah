@@ -60,6 +60,8 @@ export default function ProfilePage() {
             form.reset({
                 ...profileData,
                 email: user?.email || profileData.email, // Prioritize auth email
+                phone: profileData.phone || "",
+                address: profileData.address || ""
             });
             if (profileData.avatar) {
                 setAvatarPreview(profileData.avatar);
@@ -71,6 +73,7 @@ export default function ProfilePage() {
                 fullName: user.displayName || "",
                 email: user.email || "",
                 phone: user.phoneNumber || "",
+                address: ""
             });
             if(user.photoURL) {
                 setAvatarPreview(user.photoURL)
