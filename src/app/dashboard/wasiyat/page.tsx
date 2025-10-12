@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { collection, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, getDoc } from "firebase/firestore";
 import { useSearchParams } from 'next/navigation';
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,6 +46,7 @@ const newWitnessSchema = z.object({
 
 type Witness = { id: string; name: string; cnic: string };
 type WasiyatDoc = { id: string; will: string; type: string; createdAt: any; };
+type WriteMode = 'ai' | 'manual' | null;
 
 export default function WasiyatPage() {
   const { toast } = useToast();
@@ -62,7 +64,6 @@ export default function WasiyatPage() {
   const searchParams = useSearchParams();
   const wasiyatId = searchParams.get('id');
   const [isLoading, setIsLoading] = useState(false);
-  const [showNewWitnessForm, setShowNewWitnessForm] = useState(false);
 
   const wasiyatQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || wasiyatId) return null; // Don't run this if we are editing a specific will by ID
@@ -71,9 +72,9 @@ export default function WasiyatPage() {
 
   const { data: wasiyatDocs, loading: wasiyatLoading } = useCollection<WasiyatDoc>(wasiyatQuery, {
       onSuccess: (data) => {
-          if(data && data.length > 0) {
+          if(data && data.length > 0 && !wasiyatId) {
               setExistingWill(data[0]);
-          } else {
+          } else if (!wasiyatId) {
               setExistingWill(null);
               setWillDraft(null);
           }
@@ -91,7 +92,8 @@ export default function WasiyatPage() {
                 setExistingWill(willData);
                 setWillDraft(willData.will);
                 setEditedWill(willData.will);
-                setIsEditing(true);
+                setIsEditing(true); // Go directly into edit mode
+                setWriteMode(willData.type as WriteMode);
             } else {
                 toast({ title: "Error", description: "Will record not found.", variant: "destructive" });
             }
@@ -114,17 +116,6 @@ export default function WasiyatPage() {
         prompt: ""
     }
   });
-
-  const newWitnessForm = useForm<z.infer<typeof newWitnessSchema>>({
-    resolver: zodResolver(newWitnessSchema),
-    defaultValues: {
-      name: "",
-      cnic: "",
-      phone: "",
-      email: "",
-    },
-  });
-
 
   const handlePrint = () => {
     window.print();
@@ -285,40 +276,16 @@ export default function WasiyatPage() {
     });
   };
 
-  async function onAddNewWitness(data: z.infer<typeof newWitnessSchema>) {
-     if (!firestore || !user) {
-        toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
-        return;
-    }
-    const witnessData = { ...data, userId: user.uid, createdAt: serverTimestamp() };
-    const collectionPath = `users/${user.uid}/witnesses`;
-    const collectionRef = collection(firestore, collectionPath);
-    
-    addDoc(collectionRef, witnessData)
-    .then(() => {
-        toast({ title: "Witness Added", description: "The new witness has been saved." });
-        newWitnessForm.reset();
-        setShowNewWitnessForm(false);
-    })
-    .catch((error) => {
-        errorEmitter.emit("permission-error", new FirestorePermissionError({
-            path: collectionPath,
-            operation: "create",
-            requestResourceData: witnessData,
-        }));
-    });
-  }
-
-
   const renderContent = () => {
-      if(isLoading) {
+      if(isLoading && !wasiyatDocs) {
           return (
              <div className="lg:col-span-1 flex flex-col gap-6 print:hidden">
                 <Card className="border-2"><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
             </div>
           )
       }
-
+      
+      // This is the main "existing will" view if not in edit mode
       if (existingWill && !isEditing) {
           return (
             <div className="lg:col-span-1 flex flex-col gap-6 print:hidden">
@@ -328,7 +295,7 @@ export default function WasiyatPage() {
                         <CardDescription>You have an existing will. You can edit it or recreate a new one.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 gap-4">
-                       <Button variant="outline" size="lg" className="h-auto min-h-20 flex-col items-start p-4 gap-1" onClick={() => { setIsEditing(true); setEditedWill(existingWill.will); setWillDraft(existingWill.will); }}>
+                       <Button variant="outline" size="lg" className="h-auto min-h-20 flex-col items-start p-4 gap-1" onClick={() => { setIsEditing(true); setEditedWill(existingWill.will); setWillDraft(existingWill.will); setWriteMode(existingWill.type as WriteMode)}}>
                            <div className="flex items-center gap-2">
                             <Edit className="text-primary"/>
                             <span className="font-semibold text-base">Edit Existing Will</span>
@@ -364,9 +331,10 @@ export default function WasiyatPage() {
           );
       }
 
+      // This is the creation/editing view
       return (
         <div className="lg:col-span-1 flex flex-col gap-6 print:hidden">
-            {!writeMode && !isEditing && (
+            {(!writeMode && !isEditing) && (
                 <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="text-primary">How would you like to create your will?</CardTitle>
@@ -390,13 +358,13 @@ export default function WasiyatPage() {
                 </Card>
             )}
 
-            {(writeMode === 'ai' || (isEditing && existingWill?.type === 'ai')) && !willDraft && (
+            {(writeMode === 'ai' || (isEditing && writeMode === 'ai')) && !willDraft && (
                 <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
                             <Sparkles className="text-primary"/> AI Will Assistant
                         </CardTitle>
-                        <Button variant="link" className="p-0 h-auto justify-start" onClick={() => {setWriteMode(null); if(existingWill) setIsEditing(false);}}>&larr; Back</Button>
+                        <Button variant="link" className="p-0 h-auto justify-start" onClick={() => {setWriteMode(null); if(wasiyatId) {router.push('/dashboard/wasiyat')}; setIsEditing(false);}}>&larr; Back</Button>
                     </CardHeader>
                     <CardContent>
                         <Form {...aiForm}>
@@ -427,13 +395,13 @@ export default function WasiyatPage() {
                 </Card>
             )}
 
-            {(writeMode === 'manual' || (isEditing && existingWill?.type === 'manual')) && !willDraft && (
+            {(writeMode === 'manual' || (isEditing && writeMode === 'manual')) && !willDraft && (
                  <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
                             <Edit className="text-primary"/> Manual Will Editor
                         </CardTitle>
-                         <Button variant="link" className="p-0 h-auto justify-start" onClick={() => {setWriteMode(null); if(existingWill) setIsEditing(false);}}>&larr; Back</Button>
+                         <Button variant="link" className="p-0 h-auto justify-start" onClick={() => {setWriteMode(null); if(wasiyatId) {router.push('/dashboard/wasiyat')}; setIsEditing(false);}}>&larr; Back</Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Textarea
@@ -516,7 +484,7 @@ export default function WasiyatPage() {
                                      {isEditing ? (
                                         <>
                                             <Button onClick={handleEditSave}><Save className="mr-2 h-4 w-4" /> Save Changes</Button>
-                                            <Button variant="outline" onClick={() => { setIsEditing(false); setEditedWill(willDraft || ""); }}>Cancel</Button>
+                                            <Button variant="outline" onClick={() => { setIsEditing(false); setEditedWill(willDraft || ""); if(wasiyatId){router.push('/dashboard/wasiyat')}; }}>Cancel</Button>
                                         </>
                                     ) : (
                                         <>
@@ -525,7 +493,7 @@ export default function WasiyatPage() {
                                             )}
                                         </>
                                     )}
-                                     <Dialog onOpenChange={() => setShowNewWitnessForm(false)}>
+                                     <Dialog>
                                         <DialogTrigger asChild>
                                             <Button variant="outline"><UserCheck className="mr-2 h-4 w-4" /> Assign Witnesses</Button>
                                         </DialogTrigger>
@@ -537,62 +505,44 @@ export default function WasiyatPage() {
                                                 </DialogDescription>
                                             </DialogHeader>
                                             
-                                            {!showNewWitnessForm ? (
-                                                <>
-                                                    <ScrollArea className="max-h-64">
-                                                        <div className="space-y-2 p-1">
-                                                            {witnessesLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                                                            {witnessesError && <p className="text-destructive text-center">Could not load witnesses.</p>}
-                                                            {!witnessesLoading && witnesses?.map(witness => (
-                                                                <div key={witness.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
-                                                                    <Checkbox
-                                                                        id={`witness-${witness.id}`}
-                                                                        onCheckedChange={() => handleWitnessSelect(witness)}
-                                                                        checked={selectedWitnesses.some(w => w.id === witness.id)}
-                                                                    />
-                                                                    <label
-                                                                        htmlFor={`witness-${witness.id}`}
-                                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
-                                                                    >
-                                                                        {witness.name} ({witness.cnic})
-                                                                    </label>
-                                                                </div>
-                                                            ))}
-                                                            {!witnessesLoading && witnesses?.length === 0 && (
-                                                                <p className="text-center text-muted-foreground p-4">No saved witnesses found.</p>
-                                                            )}
-                                                        </div>
-                                                    </ScrollArea>
-                                                     <Button variant="secondary" onClick={() => setShowNewWitnessForm(true)}>
+                                            <div className="flex flex-col gap-4">
+                                                <ScrollArea className="max-h-64">
+                                                    <div className="space-y-2 p-1">
+                                                        {witnessesLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                                                        {witnessesError && <p className="text-destructive text-center">Could not load witnesses.</p>}
+                                                        {!witnessesLoading && witnesses?.map(witness => (
+                                                            <div key={witness.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                                                <Checkbox
+                                                                    id={`witness-${witness.id}`}
+                                                                    onCheckedChange={() => handleWitnessSelect(witness)}
+                                                                    checked={selectedWitnesses.some(w => w.id === witness.id)}
+                                                                />
+                                                                <label
+                                                                    htmlFor={`witness-${witness.id}`}
+                                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                                                                >
+                                                                    {witness.name} ({witness.cnic})
+                                                                </label>
+                                                            </div>
+                                                        ))}
+                                                        {!witnessesLoading && witnesses?.length === 0 && (
+                                                            <p className="text-center text-muted-foreground p-4">No saved witnesses found.</p>
+                                                        )}
+                                                    </div>
+                                                </ScrollArea>
+                                                <Button variant="secondary" asChild>
+                                                    <Link href="/dashboard/witnesses">
                                                         <PlusCircle className="mr-2 h-4 w-4" /> Add New Witness
-                                                    </Button>
-                                                </>
-                                            ) : (
-                                                 <Form {...newWitnessForm}>
-                                                    <form onSubmit={newWitnessForm.handleSubmit(onAddNewWitness)} className="space-y-4">
-                                                        <FormField control={newWitnessForm.control} name="name" render={({ field }) => (
-                                                            <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )}/>
-                                                        <FormField control={newWitnessForm.control} name="cnic" render={({ field }) => (
-                                                             <FormItem><FormLabel>CNIC</FormLabel><FormControl><Input placeholder="12345-1234567-1" {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )}/>
-                                                         <FormField control={newWitnessForm.control} name="phone" render={({ field }) => (
-                                                             <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                                        )}/>
-                                                        <div className="flex justify-end gap-2">
-                                                          <Button type="button" variant="ghost" onClick={() => setShowNewWitnessForm(false)}>Cancel</Button>
-                                                          <Button type="submit">Save Witness</Button>
-                                                        </div>
-                                                    </form>
-                                                </Form>
-                                            )}
+                                                    </Link>
+                                                </Button>
+                                            </div>
                                             
                                             <DialogFooter>
                                                 <DialogClose asChild>
                                                     <Button variant="outline">Cancel</Button>
                                                 </DialogClose>
                                                 <DialogClose asChild>
-                                                    <Button onClick={handleAssignWitnesses} disabled={showNewWitnessForm}>Assign Selected</Button>
+                                                    <Button onClick={handleAssignWitnesses}>Assign Selected</Button>
                                                 </DialogClose>
                                             </DialogFooter>
                                         </DialogContent>
@@ -610,5 +560,3 @@ export default function WasiyatPage() {
     </div>
   );
 }
-
-    

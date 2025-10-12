@@ -9,6 +9,7 @@ import { format, parse } from "date-fns";
 import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, query } from "firebase/firestore";
 import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from "next/link";
 
 
 import { Button } from "@/components/ui/button";
@@ -355,29 +356,36 @@ export default function QarzPage() {
                                 <DialogTitle>Select Witnesses</DialogTitle>
                                 <DialogDescription>Choose from your saved witnesses.</DialogDescription>
                             </DialogHeader>
-                            <ScrollArea className="max-h-64">
-                                <div className="space-y-2 p-1">
-                                    {witnessesLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                                    {!witnessesLoading && availableWitnesses?.map(witness => (
-                                        <div key={witness.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
-                                            <Checkbox
-                                                id={`witness-${witness.id}`}
-                                                onCheckedChange={() => handleWitnessSelect(witness)}
-                                                checked={selectedWitnesses.some(w => w.id === witness.id)}
-                                            />
-                                            <label
-                                                htmlFor={`witness-${witness.id}`}
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
-                                            >
-                                                {witness.name} ({witness.cnic})
-                                            </label>
-                                        </div>
-                                    ))}
-                                    {!witnessesLoading && availableWitnesses?.length === 0 && (
-                                        <p className="text-center text-muted-foreground p-4">No saved witnesses. Add one from the Witnesses page.</p>
-                                    )}
-                                </div>
-                            </ScrollArea>
+                             <div className="flex flex-col gap-4">
+                                <ScrollArea className="max-h-64">
+                                    <div className="space-y-2 p-1">
+                                        {witnessesLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                                        {!witnessesLoading && availableWitnesses?.map(witness => (
+                                            <div key={witness.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                                <Checkbox
+                                                    id={`witness-${witness.id}`}
+                                                    onCheckedChange={() => handleWitnessSelect(witness)}
+                                                    checked={selectedWitnesses.some(w => w.id === witness.id)}
+                                                />
+                                                <label
+                                                    htmlFor={`witness-${witness.id}`}
+                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                                                >
+                                                    {witness.name} ({witness.cnic})
+                                                </label>
+                                            </div>
+                                        ))}
+                                        {!witnessesLoading && availableWitnesses?.length === 0 && (
+                                            <p className="text-center text-muted-foreground p-4">No saved witnesses found.</p>
+                                        )}
+                                    </div>
+                                </ScrollArea>
+                                <Button variant="secondary" asChild>
+                                    <Link href="/dashboard/witnesses">
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Add New Witness
+                                    </Link>
+                                </Button>
+                            </div>
                             <DialogFooter>
                                 <DialogClose asChild>
                                     <Button>Done</Button>
@@ -405,5 +413,3 @@ export default function QarzPage() {
     </div>
   );
 }
-
-    
