@@ -34,7 +34,7 @@ export default function ProfilePage() {
     const { toast } = useToast();
     const { user, loading: authLoading } = useUser();
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const firestore = useFirestore();
     const auth = useAuth();
@@ -118,67 +118,60 @@ export default function ProfilePage() {
             return;
         }
 
+        setIsSubmitting(true);
+        
         let finalAvatarUrl = values.avatar;
 
-        // Check if the avatar value is a new data URI, meaning a new file was selected
-        if (values.avatar && values.avatar.startsWith('data:image')) {
-            setIsUploading(true);
-            try {
+        try {
+            // Check if the avatar value is a new data URI, meaning a new file was selected
+            if (values.avatar && values.avatar.startsWith('data:image')) {
                 const imageRef = storageRef(storage, `avatars/${user.uid}`);
-                // Upload the base64 string
                 const snapshot = await uploadString(imageRef, values.avatar, 'data_url');
                 finalAvatarUrl = await getDownloadURL(snapshot.ref);
                 toast({ title: "Avatar Uploaded", description: "Your new photo has been uploaded." });
-            } catch (error) {
-                console.error("Error uploading avatar:", error);
-                toast({ title: "Upload Failed", description: "Could not upload your new photo.", variant: "destructive" });
-                setIsUploading(false);
-                return;
-            } finally {
-                setIsUploading(false);
             }
-        }
 
+            const updatedValues = {
+                ...values,
+                avatar: finalAvatarUrl,
+                email: user.email,
+            };
 
-        const profileUpdatePromise = updateProfile(authUser, {
-            displayName: values.fullName,
-            photoURL: finalAvatarUrl,
-        });
+            const profileUpdatePromise = updateProfile(authUser, {
+                displayName: values.fullName,
+                photoURL: finalAvatarUrl,
+            });
 
-        const firestoreUpdatePromise = setDoc(profileDocRef, {
-            ...values,
-            avatar: finalAvatarUrl, // Save the public URL, not the data URI
-            email: user.email, // ensure email is not changed
-        }, { merge: true })
-        .catch(async (error) => {
-             errorEmitter.emit("permission-error", new FirestorePermissionError({
-                path: profileDocRef.path,
-                operation: "update",
-                requestResourceData: values,
-            }));
-             throw error; // re-throw to be caught by Promise.all
-        });
+            const firestoreUpdatePromise = setDoc(profileDocRef, updatedValues, { merge: true })
+            .catch(async (error) => {
+                errorEmitter.emit("permission-error", new FirestorePermissionError({
+                    path: profileDocRef.path,
+                    operation: "update",
+                    requestResourceData: updatedValues,
+                }));
+                throw error; // re-throw to be caught by Promise.all
+            });
 
+            await Promise.all([profileUpdatePromise, firestoreUpdatePromise]);
 
-        Promise.all([profileUpdatePromise, firestoreUpdatePromise])
-        .then(() => {
             toast({
                 title: "Profile Updated",
                 description: "Your personal information has been saved.",
             });
-            form.reset(values, { keepDirty: false });
+            form.reset(updatedValues, { keepDirty: false });
 
-        })
-        .catch((error) => {
+        } catch (error) {
             console.error("Failed to update profile:", error);
             if (! (error instanceof FirestorePermissionError)) {
                  toast({
                     title: "Update Failed",
-                    description: error.message || "Could not update your profile.",
+                    description: (error as Error).message || "Could not update your profile.",
                     variant: "destructive",
                 });
             }
-        });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
     
     const currentUser = form.watch();
@@ -279,8 +272,8 @@ export default function ProfilePage() {
                             </div>
                             
                             <div className="flex justify-end">
-                                <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
-                                    {form.formState.isSubmitting || isUploading ? (
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
                                         <Save className="mr-2 h-4 w-4" />
@@ -295,5 +288,6 @@ export default function ProfilePage() {
         </div>
     );
 }
+
 
     
