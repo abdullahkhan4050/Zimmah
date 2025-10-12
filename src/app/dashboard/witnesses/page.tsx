@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { UserCheck, PlusCircle } from "lucide-react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +43,11 @@ export default function WitnessesPage() {
     }
   });
 
-  const witnessesQuery = firestore && user ? collection(firestore, `users/${user.uid}/witnesses`) : null;
+  const witnessesQuery = useMemo(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, `users/${user.uid}/witnesses`);
+  }, [firestore, user]);
+
   const { data: witnesses, loading } = useCollection<Witness>(witnessesQuery);
 
   async function onSubmit(data: z.infer<typeof witnessSchema>) {
@@ -57,11 +62,10 @@ export default function WitnessesPage() {
 
     const witnessData = {
       ...data,
-      userId: user.uid,
       createdAt: serverTimestamp(),
     };
     
-    const collectionRef = collection(firestore, "witnesses");
+    const collectionRef = collection(firestore, `users/${user.uid}/witnesses`);
     
     addDoc(collectionRef, witnessData)
     .then(() => {
