@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { UserCheck, PlusCircle } from "lucide-react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where } from "firebase/firestore";
 import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export default function WitnessesPage() {
 
   const witnessesQuery = useMemo(() => {
     if (!firestore || !authUser) return null;
-    return collection(firestore, `users/${authUser.uid}/witnesses`);
+    return query(collection(firestore, "witnesses"), where("userId", "==", authUser.uid));
   }, [firestore, authUser]);
 
   const { data: witnesses, loading } = useCollection<Witness>(witnessesQuery);
@@ -69,7 +69,7 @@ export default function WitnessesPage() {
       createdAt: serverTimestamp(),
     };
     
-    const collectionRef = collection(firestore, `users/${currentUser.uid}/witnesses`);
+    const collectionRef = collection(firestore, "witnesses");
     
     addDoc(collectionRef, witnessData)
     .then(() => {
