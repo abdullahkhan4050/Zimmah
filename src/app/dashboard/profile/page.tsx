@@ -224,7 +224,7 @@ export default function ProfilePage() {
                                 className="hidden"
                                 accept="image/*"
                             />
-                            <Button size="sm" variant="outline" className="w-fit mt-2" onClick={() => fileInput.current?.click()}>
+                            <Button size="sm" variant="outline" className="w-fit mt-2" onClick={() => fileInputRef.current?.click()}>
                                 <Upload className="mr-2 h-4 w-4" /> Change Photo
                             </Button>
                         </div>
@@ -300,3 +300,5 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+    
