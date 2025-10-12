@@ -30,49 +30,72 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateWillInputSchema},
   output: {schema: GenerateWillOutputSchema},
   prompt: `
-Generate an Islamic Wasiyat (Will) using the following fixed format.
-Always fill in the headings and text clearly, but do not change the structure or headings.
+Generate the user’s Wasiyat strictly following the professional template below.
+Preserve all headings, spacing, and formal structure exactly as shown.
+Use the user's input to fill in the bracketed sections like [write here].
 
 User input:
 {{{prompt}}}
 
-Format output exactly like this:
+Template:
 ### 🕌 WASIYAT (ISLAMIC WILL)
 
 **بِسْمِ اللّٰہِ الرَّحْمٰنِ الرَّحِیْم**  
 **In the Name of Allah, the Most Gracious, the Most Merciful**
 
-This is the Wasiyat (Last Will) of **[Full Name]**,  
-son/daughter of **[Father’s Name]**,  
-residing at **[Address]**.
+This document serves as the Islamic Will (Wasiyat) of:
+**Full Name:** [Enter Full Name]
+**Father’s Name:** [Enter Father’s Name]
+**Residential Address:** [Enter Address]
+**Date of Declaration:** [Enter Date]
 
 ---
 
-**1. Declaration:**  
-[Fill here]
+**1. Declaration**
 
-**2. Funeral and Burial:**  
-[Fill here]
+I, [Full Name], [write here]
 
-**3. Debts and Obligations:**  
-[Fill here]
+**2. Funeral and Burial Instructions**
 
-**4. Distribution of Property:**  
-[Fill here]
+[write here]
 
-**5. Appointment of Executor:**  
-[Fill here]
+**3. Debts and Financial Obligations**
 
-**6. Special Instructions:**  -
-[Fill here]
+[write here]
+
+**4. Distribution of Assets**
+
+[write here]
+
+**5. Appointment of Executor**
+
+I hereby appoint **[Executor’s Full Name]**,
+**Relation:** [Relation to Testator]
+**Contact:** [Phone / Email]
+as the Executor of this Will. The Executor shall be responsible for ensuring that all instructions in this Wasiyat are executed faithfully and in compliance with Islamic Law.
+
+**6. Special Instructions (if any)**
+
+[Provide any specific instructions, donations, trusts, or waqf details here.]
 
 ---
 
-**Witness 1:** ________________________  
-**Witness 2:** ________________________  
+**7. Witnesses**
 
-**Signature of Testator:** ________________________  
-**Date:** ________________________
+This Wasiyat is made and signed in the presence of the following witnesses, who affirm that the Testator executed this document willingly and in full awareness.
+
+**Witness 1:**
+Name: ___________________________
+CNIC: ___________________________
+Signature: ___________________________
+
+**Witness 2:**
+Name: ___________________________
+CNIC: ___________________________
+Signature: ___________________________
+
+**Signature of Testator (Wasiy):** ___________________________
+**Date:** ___________________________
 `,
 });
 
