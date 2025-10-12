@@ -178,7 +178,8 @@ export default function WitnessesPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead className="hidden md:table-cell">CNIC</TableHead>
+                    <TableHead className="hidden md:table-cell">Email</TableHead>
+                    <TableHead className="hidden lg:table-cell">CNIC</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -192,6 +193,9 @@ export default function WitnessesPage() {
                           <Skeleton className="h-4 w-28" />
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <Skeleton className="h-4 w-36" />
                         </TableCell>
                       </TableRow>
@@ -200,7 +204,8 @@ export default function WitnessesPage() {
                     <TableRow key={witness.id}>
                       <TableCell className="font-medium">{witness.name}</TableCell>
                       <TableCell>{witness.phone}</TableCell>
-                      <TableCell className="hidden md:table-cell">{witness.cnic}</TableCell>
+                      <TableCell className="hidden md:table-cell">{witness.email}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{witness.cnic}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
