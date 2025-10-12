@@ -15,6 +15,7 @@ import {
   User,
   Loader2,
   LayoutDashboard,
+  UserCheck,
 } from "lucide-react";
 
 import {
@@ -51,6 +52,7 @@ const vaultItems = [
   { href: "/dashboard/wasiyat", label: "Wasiyat (Wills)", icon: FileText },
   { href: "/dashboard/qarz", label: "Qarz (Debts)", icon: BookOpen },
   { href: "/dashboard/amanat", label: "Amanat (Trusts)", icon: HeartHandshake },
+  { href: "/dashboard/witnesses", label: "Witnesses", icon: UserCheck },
 ];
 
 const toolsItems = [
