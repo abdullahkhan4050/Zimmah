@@ -61,8 +61,6 @@ export default function WasiyatPage() {
       onSuccess: (data) => {
           if(data && data.length > 0) {
               setExistingWill(data[0]);
-              setWillDraft(data[0].will);
-              setEditedWill(data[0].will);
           } else {
               setExistingWill(null);
               setWillDraft(null);
@@ -161,14 +159,22 @@ export default function WasiyatPage() {
     
     const updatedData = { will: editedWill };
 
-    updateDocumentNonBlocking(docRef, updatedData);
-
-    setWillDraft(editedWill);
-    setExistingWill(prev => prev ? { ...prev, will: editedWill } : null);
-    setIsEditing(false);
-    toast({
-        title: "Changes Saved",
-        description: "Your edits to the will have been saved.",
+    updateDoc(docRef, updatedData)
+    .then(() => {
+        setWillDraft(editedWill);
+        setExistingWill(prev => prev ? { ...prev, will: editedWill } : null);
+        setIsEditing(false);
+        toast({
+            title: "Changes Saved",
+            description: "Your edits to the will have been saved.",
+        });
+    })
+    .catch((error) => {
+        errorEmitter.emit("permission-error", new FirestorePermissionError({
+            path: docRef.path,
+            operation: "update",
+            requestResourceData: updatedData,
+        }));
     });
   };
 
@@ -254,7 +260,7 @@ export default function WasiyatPage() {
                         <CardDescription>You have an existing will. You can edit it or recreate a new one.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 gap-4">
-                       <Button variant="outline" size="lg" className="h-auto min-h-20 flex-col items-start p-4 gap-1" onClick={() => setIsEditing(true)}>
+                       <Button variant="outline" size="lg" className="h-auto min-h-20 flex-col items-start p-4 gap-1" onClick={() => { setIsEditing(true); setEditedWill(existingWill.will); setWillDraft(existingWill.will); }}>
                            <div className="flex items-center gap-2">
                             <Edit className="text-primary"/>
                             <span className="font-semibold text-base">Edit Existing Will</span>
@@ -507,5 +513,3 @@ export default function WasiyatPage() {
     </div>
   );
 }
-
-    
