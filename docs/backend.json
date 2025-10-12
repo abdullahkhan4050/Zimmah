@@ -1,0 +1,341 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Zimmah Digital Vault application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "cnic": {
+          "type": "string",
+          "description": "User's national identification card number."
+        },
+        "phone": {
+          "type": "string",
+          "description": "User's phone number."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "User's date of birth.",
+          "format": "date-time"
+        },
+        "address": {
+          "type": "string",
+          "description": "User's address."
+        },
+        "role": {
+          "type": "string",
+          "description": "User's role (User, Scholar, Witness, Admin)."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "role"
+      ]
+    },
+    "Qarz": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Qarz",
+      "type": "object",
+      "description": "Represents a debt record (Qarz).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the debt record."
+        },
+        "debtorId": {
+          "type": "string",
+          "description": "Reference to User (Debtor). (Relationship: User 1:N Qarz)"
+        },
+        "creditorId": {
+          "type": "string",
+          "description": "Reference to User (Creditor). (Relationship: User 1:N Qarz)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the debt."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Date when the debt is due.",
+          "format": "date-time"
+        },
+        "witnessIds": {
+          "type": "array",
+          "description": "References to Users (Witnesses). (Relationship: User N:N Qarz)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blockchainVerification": {
+          "type": "string",
+          "description": "blockchain verification hash",
+          "format": "string"
+        }
+      },
+      "required": [
+        "id",
+        "debtorId",
+        "creditorId",
+        "amount",
+        "dueDate"
+      ]
+    },
+    "Amanat": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Amanat",
+      "type": "object",
+      "description": "Represents an entrusted item (Amanat).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the entrusted item record."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Amanat)"
+        },
+        "item": {
+          "type": "string",
+          "description": "Name of the entrusted item."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the entrusted item."
+        },
+        "entrustee": {
+          "type": "string",
+          "description": "Name of the person entrusted with the item."
+        },
+        "returnDate": {
+          "type": "string",
+          "description": "Date when the item is expected to be returned.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the Amanat item"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "item",
+        "entrustee",
+        "returnDate"
+      ]
+    },
+    "Wasiyat": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Wasiyat",
+      "type": "object",
+      "description": "Represents a will (Wasiyat).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the will."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Wasiyat)"
+        },
+        "beneficiaries": {
+          "type": "array",
+          "description": "List of beneficiaries for the will.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assets": {
+          "type": "string",
+          "description": "Description of the assets included in the will."
+        },
+        "islamicInheritanceShares": {
+          "type": "string",
+          "description": "Details of Islamic inheritance shares distribution."
+        },
+        "witnessIds": {
+          "type": "array",
+          "description": "References to Users (Witnesses). (Relationship: User N:N Wasiyat)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scholarValidation": {
+          "type": "string",
+          "description": "Reference to User (Scholar). (Relationship: User 1:N Wasiyat)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "beneficiaries",
+        "assets",
+        "islamicInheritanceShares"
+      ]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a notification for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the notification."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Notification)"
+        },
+        "message": {
+          "type": "string",
+          "description": "Notification message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of the notification.",
+          "format": "date-time"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of the notification (e.g., Qarz, Amanat, Wasiyat)."
+        },
+        "relatedId": {
+          "type": "string",
+          "description": "Reference to the related entity (Qarz, Amanat, Wasiyat)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "message",
+        "timestamp",
+        "type",
+        "relatedId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. 'userId' corresponds to the Firebase Auth UID. Includes all user-related data (email, name, role, etc.).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/qarzs/{qarzId}",
+        "definition": {
+          "entityName": "Qarz",
+          "schema": {
+            "$ref": "#/backend/entities/Qarz"
+          },
+          "description": "Stores debt records (Qarz) associated with a specific user (debtor). 'userId' corresponds to the debtorId. This structure enforces path-based ownership, simplifying security rules. Access control is based on the 'debtorId' matching the authenticated user's UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (debtor)."
+            },
+            {
+              "name": "qarzId",
+              "description": "The unique identifier for the debt record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/amanats/{amanatId}",
+        "definition": {
+          "entityName": "Amanat",
+          "schema": {
+            "$ref": "#/backend/entities/Amanat"
+          },
+          "description": "Stores entrusted item records (Amanat) associated with a specific user. 'userId' corresponds to the owner of the Amanat. This structure enforces path-based ownership, simplifying security rules. Access control is based on the 'userId' matching the authenticated user's UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (owner of the Amanat)."
+            },
+            {
+              "name": "amanatId",
+              "description": "The unique identifier for the Amanat record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/wasiyats/{wasiyatId}",
+        "definition": {
+          "entityName": "Wasiyat",
+          "schema": {
+            "$ref": "#/backend/entities/Wasiyat"
+          },
+          "description": "Stores will records (Wasiyat) associated with a specific user. 'userId' corresponds to the owner of the Wasiyat. This structure enforces path-based ownership, simplifying security rules. Access control is based on the 'userId' matching the authenticated user's UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (owner of the Wasiyat)."
+            },
+            {
+              "name": "wasiyatId",
+              "description": "The unique identifier for the Wasiyat record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores notifications associated with a specific user. 'userId' corresponds to the recipient of the notification. Access control is based on the 'userId' matching the authenticated user's UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user (recipient of the notification)."
+            },
+            {
+              "name": "notificationId",
+              "description": "The unique identifier for the notification record."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to address the 'Missing or insufficient permissions' error by ensuring authorization independence and proper data segregation. The core principle is to avoid complex `get()` calls in security rules, which are often the root cause of such errors. To achieve this, we denormalize authorization data (e.g., roles, memberships) directly into the documents where it's needed. Furthermore, we segregate data based on access requirements, using path-based ownership for user-specific data and membership maps for collaborative scenarios.\n\nThe structure supports secure `list` operations (QAPs) by:\n\n1.  **Path-Based Ownership:** Utilizing paths like `/users/{userId}/qarzs/{qarzId}` ensures that listing qarzs within a specific user's scope is straightforward and secure, as the rules can directly check if `request.auth.uid == userId`.\n2.  **Segregation of Roles:** The roles of users are stored within their user document (`/users/{userId}`), allowing us to validate the `request.auth.uid` against the data stored.\n\nThis design promotes clarity, simplifies security rules, and enhances debuggability by making authorization logic explicit within the document structure, eliminating the need for complex rule logic."
+  }
+}

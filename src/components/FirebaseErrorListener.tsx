@@ -1,45 +1,39 @@
-
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useToast } from '@/hooks/use-toast';
 
-// This is a client component that will listen for permission errors
-// and display a toast with the error message. In a real app this would
-// be a more sophisticated error handling mechanism.
-//
-// This is not a user-facing component and should not be rendered in the UI.
-// To use it, import it in your layout.tsx file and include it in the body.
+/**
+ * An invisible component that listens for globally emitted 'permission-error' events.
+ * It throws any received error to be caught by Next.js's global-error.tsx.
+ */
 export function FirebaseErrorListener() {
-  const { toast } = useToast();
+  // Use the specific error type for the state for type safety.
+  const [error, setError] = useState<FirestorePermissionError | null>(null);
 
   useEffect(() => {
-    const handlePermissionError = (error: FirestorePermissionError) => {
-      // In development, we'll throw the error to get the Next.js
-      // error overlay with the stack trace and more details.
-      if (process.env.NODE_ENV === 'development') {
-        throw error;
-      }
-
-      // In production, we'll show a toast to the user.
-      toast({
-        title: 'Permission Denied',
-        description:
-          'You do not have permission to perform this action. Please contact support if you believe this is an error.',
-        variant: 'destructive',
-      });
+    // The callback now expects a strongly-typed error, matching the event payload.
+    const handleError = (error: FirestorePermissionError) => {
+      // Set error in state to trigger a re-render.
+      setError(error);
     };
 
-    errorEmitter.on('permission-error', handlePermissionError);
+    // The typed emitter will enforce that the callback for 'permission-error'
+    // matches the expected payload type (FirestorePermissionError).
+    errorEmitter.on('permission-error', handleError);
 
-    // Clean up the listener when the component unmounts
+    // Unsubscribe on unmount to prevent memory leaks.
     return () => {
-      errorEmitter.off('permission-error', handlePermissionError);
+      errorEmitter.off('permission-error', handleError);
     };
-  }, [toast]);
+  }, []);
 
-  // This component doesn't render anything itself
+  // On re-render, if an error exists in state, throw it.
+  if (error) {
+    throw error;
+  }
+
+  // This component renders nothing.
   return null;
 }
