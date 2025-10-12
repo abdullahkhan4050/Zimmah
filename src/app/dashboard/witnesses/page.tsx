@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore, useCollection } from "@/firebase";
+import { useFirestore, useCollection, useUser } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -31,8 +31,7 @@ type Witness = z.infer<typeof witnessSchema> & { id: string };
 export default function WitnessesPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const auth = useAuth();
-  const { user: authUser } = useAuth(); // Use the hook for display/querying
+  const { user } = useUser();
   
   const form = useForm<z.infer<typeof witnessSchema>>({
     resolver: zodResolver(witnessSchema),
@@ -45,16 +44,14 @@ export default function WitnessesPage() {
   });
 
   const witnessesQuery = useMemo(() => {
-    if (!firestore || !authUser) return null;
-    return query(collection(firestore, "witnesses"), where("userId", "==", authUser.uid));
-  }, [firestore, authUser]);
+    if (!firestore || !user) return null;
+    return query(collection(firestore, "witnesses"), where("userId", "==", user.uid));
+  }, [firestore, user]);
 
   const { data: witnesses, loading } = useCollection<Witness>(witnessesQuery);
 
   async function onSubmit(data: z.infer<typeof witnessSchema>) {
-    const currentUser = auth?.currentUser;
-
-    if (!firestore || !currentUser) {
+    if (!firestore || !user) {
         toast({
             title: "Error",
             description: "You must be logged in to add a witness.",
@@ -65,7 +62,7 @@ export default function WitnessesPage() {
 
     const witnessData = {
       ...data,
-      userId: currentUser.uid,
+      userId: user.uid,
       createdAt: serverTimestamp(),
     };
     
