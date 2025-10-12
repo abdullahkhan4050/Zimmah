@@ -28,16 +28,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { collection, orderBy, query, where } from "firebase/firestore";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 
 type Wasiyat = { id: string; will: string; type: string; createdAt: any };
-type Qarz = { id: string; debtor: string; creditor: string; amount: number; dueDate: string };
-type Amanat = { id: string; item: string; description: string; entrustee: string; returnDate: string };
+type Qarz = { id: string; debtor: string; creditor: string; amount: number; dueDate: string; status: 'Pending' | 'Paid' };
+type Amanat = { id: string; item: string; description: string; entrustee: string; returnDate: string; status: 'Entrusted' | 'Returned' };
 
 
 export default function DashboardPage() {
@@ -54,7 +56,7 @@ export default function DashboardPage() {
     
     const qarzQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, `users/${user.uid}/qarzs`), orderBy("createdAt", "desc"));
+        return query(collection(firestore, `users/${user.uid}/qarzs`));
     }, [firestore, user?.uid]);
     const { data: qarz, loading: qarzLoading } = useCollection<Qarz>(qarzQuery);
 
@@ -63,6 +65,25 @@ export default function DashboardPage() {
         return query(collection(firestore, `users/${user.uid}/amanats`));
     }, [firestore, user?.uid]);
     const { data: amanat, loading: amanatLoading } = useCollection<Amanat>(amanatQuery);
+
+    const sortedQarz = useMemo(() => {
+      if (!qarz) return [];
+      return [...qarz].sort((a, b) => {
+        if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+        if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+        return 0;
+      });
+    }, [qarz]);
+
+    const sortedAmanat = useMemo(() => {
+        if (!amanat) return [];
+        return [...amanat].sort((a, b) => {
+            if (a.status === 'Entrusted' && b.status !== 'Entrusted') return -1;
+            if (a.status !== 'Entrusted' && b.status === 'Entrusted') return 1;
+            return 0;
+        });
+    }, [amanat]);
+
 
     const loading = wasiyatLoading || qarzLoading || amanatLoading;
 
@@ -166,26 +187,36 @@ export default function DashboardPage() {
                             <Skeleton className="h-12 w-full" />
                             <Skeleton className="h-12 w-full" />
                         </div>
-                     ) : qarz && qarz.length > 0 ? (
+                     ) : sortedQarz && sortedQarz.length > 0 ? (
                          <ul className="space-y-2 pt-4">
-                            {qarz.map((item) => (
+                            {sortedQarz.map((item) => (
                                 <li key={item.id}>
                                      <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-between">
-                                                <span>Debt of {item.amount} from {item.debtor} to {item.creditor}</span>
-                                                 <span className="text-muted-foreground text-xs">Due: {item.dueDate}</span>
+                                            <Button variant="outline" className="w-full justify-between h-auto py-2">
+                                                <div className="flex flex-col items-start text-left">
+                                                    <span>Debt of {item.amount} from {item.debtor} to {item.creditor}</span>
+                                                    <span className="text-muted-foreground text-xs">Due: {item.dueDate}</span>
+                                                </div>
+                                                <Badge className={cn(
+                                                    item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary',
+                                                    'text-white'
+                                                )}>{item.status}</Badge>
                                             </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Qarz Details</AlertDialogTitle>
                                             </AlertDialogHeader>
-                                            <div className="text-sm">
+                                            <div className="text-sm space-y-2">
                                                 <p><strong>Amount:</strong> {item.amount}</p>
                                                 <p><strong>Debtor:</strong> {item.debtor}</p>
                                                 <p><strong>Creditor:</strong> {item.creditor}</p>
                                                 <p><strong>Due Date:</strong> {item.dueDate}</p>
+                                                <p><strong>Status:</strong> <Badge className={cn(
+                                                    item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary',
+                                                    'text-white'
+                                                )}>{item.status}</Badge></p>
                                             </div>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -210,26 +241,36 @@ export default function DashboardPage() {
                          <div className="space-y-2 pt-4">
                             <Skeleton className="h-12 w-full" />
                         </div>
-                     ) : amanat && amanat.length > 0 ? (
+                     ) : sortedAmanat && sortedAmanat.length > 0 ? (
                         <ul className="space-y-2 pt-4">
-                            {amanat.map((item) => (
+                            {sortedAmanat.map((item) => (
                                <li key={item.id}>
                                      <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-between">
-                                                <span>{item.item} entrusted to {item.entrustee}</span>
-                                                <span className="text-muted-foreground text-xs">Return: {item.returnDate}</span>
+                                            <Button variant="outline" className="w-full justify-between h-auto py-2">
+                                                <div className="flex flex-col items-start text-left">
+                                                    <span>{item.item} entrusted to {item.entrustee}</span>
+                                                    <span className="text-muted-foreground text-xs">Return: {item.returnDate}</span>
+                                                </div>
+                                                <Badge className={cn(
+                                                    item.status === 'Entrusted' ? 'bg-orange-500' : 'bg-primary',
+                                                    'text-white'
+                                                )}>{item.status}</Badge>
                                             </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Amanat Details</AlertDialogTitle>
                                             </AlertDialogHeader>
-                                             <div className="text-sm">
+                                             <div className="text-sm space-y-2">
                                                 <p><strong>Item:</strong> {item.item}</p>
                                                 <p><strong>Description:</strong> {item.description}</p>
                                                 <p><strong>Entrustee:</strong> {item.entrustee}</p>
                                                 <p><strong>Return Date:</strong> {item.returnDate}</p>
+                                                <p><strong>Status:</strong> <Badge className={cn(
+                                                    item.status === 'Entrusted' ? 'bg-orange-500' : 'bg-primary',
+                                                    'text-white'
+                                                )}>{item.status}</Badge></p>
                                             </div>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -255,5 +296,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

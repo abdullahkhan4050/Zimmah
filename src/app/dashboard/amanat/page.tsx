@@ -30,6 +30,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 type Witness = { id: string; name: string; cnic: string; };
 
@@ -46,6 +48,7 @@ const amanatSchema = z.object({
   entrustee: z.string().min(2, "Entrustee name is required."),
   returnDate: z.date({ required_error: "Expected return date is required." }),
   witnesses: z.array(witnessSchema).optional(),
+  status: z.enum(["Entrusted", "Returned"]).default("Entrusted"),
 });
 
 export default function AmanatPage() {
@@ -65,6 +68,7 @@ export default function AmanatPage() {
       description: "",
       entrustee: "",
       witnesses: [],
+      status: "Entrusted",
     }
   });
 
@@ -88,6 +92,7 @@ export default function AmanatPage() {
             entrustee: data.entrustee,
             returnDate: parse(data.returnDate, "PPP", new Date()),
             witnesses: data.witnesses || [],
+            status: data.status || "Entrusted",
           });
           setSelectedWitnesses(data.witnesses || []);
         } else {
@@ -277,6 +282,28 @@ export default function AmanatPage() {
                       )}
                     />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Entrusted">Entrusted</SelectItem>
+                          <SelectItem value="Returned">Returned</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               
                <div className="space-y-4">
                     <FormLabel>Witnesses</FormLabel>
@@ -365,4 +392,3 @@ export default function AmanatPage() {
     </div>
   );
 }
-

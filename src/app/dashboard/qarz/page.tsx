@@ -30,6 +30,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 type Witness = { id: string; name: string; cnic: string; };
 
@@ -47,6 +49,7 @@ const qarzSchema = z.object({
   startDate: z.date({ required_error: "Start date is required." }),
   dueDate: z.date({ required_error: "Due date is required." }),
   witnesses: z.array(witnessSchema).optional(),
+  status: z.enum(["Pending", "Paid"]).default("Pending"),
 });
 
 export default function QarzPage() {
@@ -66,6 +69,7 @@ export default function QarzPage() {
       creditor: "",
       amount: 0,
       witnesses: [],
+      status: "Pending",
     }
   });
 
@@ -90,6 +94,7 @@ export default function QarzPage() {
             startDate: parse(data.startDate, "PPP", new Date()),
             dueDate: parse(data.dueDate, "PPP", new Date()),
             witnesses: data.witnesses || [],
+            status: data.status || "Pending",
           });
           setSelectedWitnesses(data.witnesses || []);
         } else {
@@ -320,6 +325,28 @@ export default function QarzPage() {
                     )}
                   />
                 </div>
+
+                 <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Paid">Paid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="space-y-4">
                     <FormLabel>Witnesses</FormLabel>

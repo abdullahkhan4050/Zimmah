@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -86,6 +87,11 @@
           "type": "string",
           "description": "blockchain verification hash",
           "format": "string"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the debt.",
+          "enum": ["Pending", "Paid"]
         }
       },
       "required": [
@@ -129,7 +135,8 @@
         },
         "status": {
           "type": "string",
-          "description": "Status of the Amanat item"
+          "description": "The current status of the entrusted item.",
+          "enum": ["Entrusted", "Returned"]
         }
       },
       "required": [
@@ -137,7 +144,8 @@
         "userId",
         "item",
         "entrustee",
-        "returnDate"
+        "returnDate",
+        "status"
       ]
     },
     "Wasiyat": {
