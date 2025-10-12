@@ -191,7 +191,7 @@ export default function WasiyatPage() {
                         <CardTitle className="text-primary">How would you like to create your will?</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 gap-4">
-                        <Button variant="outline" size="lg" className="h-auto min-h-20 flex-col items-start p-4 gap-1" onClick={() => setWriteMode('ai')}>
+                       <Button variant="outline" size="lg" className="h-auto min-h-20 flex-col items-start p-4 gap-1" onClick={() => setWriteMode('ai')}>
                            <div className="flex items-center gap-2">
                             <Sparkles className="text-primary"/>
                             <span className="font-semibold text-base">Write with AI</span>
@@ -367,7 +367,7 @@ export default function WasiyatPage() {
                                             </DialogFooter>
                                         </DialogContent>
                                     </Dialog>
-                                    <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Send for Scholar Review</Button>
+                                    <Button variant="outline" disabled><Share2 className="mr-2 h-4 w-4" /> Send for Scholar Review (Coming Soon)</Button>
                                 </div>
                                  <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print / Save as PDF</Button>
                             </div>
