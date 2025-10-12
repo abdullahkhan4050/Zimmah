@@ -4,9 +4,9 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { BookOpen, CalendarIcon, PlusCircle, FileSignature, Trash2, Save } from "lucide-react";
+import { BookOpen, CalendarIcon, PlusCircle, FileSignature, Save, UserCheck, Trash2 } from "lucide-react";
 import { format, parse } from "date-fns";
-import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, query } from "firebase/firestore";
 import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -19,20 +19,24 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+
+type Witness = { id: string; name: string; cnic: string; };
 
 const witnessSchema = z.object({
+  id: z.string(),
   name: z.string().min(2, "Witness name is required."),
   cnic: z.string().optional(),
   email: z.string().email("Invalid email.").optional().or(z.literal("")),
-}).refine(data => !!data.cnic || !!data.email, {
-  message: "Either CNIC or Email must be filled.",
-  path: ["cnic"],
 });
 
 const qarzSchema = z.object({
@@ -41,8 +45,7 @@ const qarzSchema = z.object({
   amount: z.coerce.number().positive("Amount must be positive."),
   startDate: z.date({ required_error: "Start date is required." }),
   dueDate: z.date({ required_error: "Due date is required." }),
-  addWitnesses: z.boolean().default(false),
-  witnesses: z.array(witnessSchema).max(3, "You can add a maximum of 3 witnesses."),
+  witnesses: z.array(witnessSchema).optional(),
 });
 
 export default function QarzPage() {
@@ -53,6 +56,7 @@ export default function QarzPage() {
   const searchParams = useSearchParams();
   const qarzId = searchParams.get('id');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedWitnesses, setSelectedWitnesses] = useState<Witness[]>([]);
 
   const form = useForm<z.infer<typeof qarzSchema>>({
     resolver: zodResolver(qarzSchema),
@@ -60,10 +64,16 @@ export default function QarzPage() {
       debtor: "",
       creditor: "",
       amount: 0,
-      addWitnesses: false,
       witnesses: [],
     }
   });
+
+  const witnessesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, `users/${user.uid}/witnesses`));
+  }, [firestore, user?.uid]);
+
+  const { data: availableWitnesses, loading: witnessesLoading } = useCollection<Witness>(witnessesQuery);
 
   useEffect(() => {
     if (qarzId && firestore && user) {
@@ -78,23 +88,29 @@ export default function QarzPage() {
             amount: data.amount,
             startDate: parse(data.startDate, "PPP", new Date()),
             dueDate: parse(data.dueDate, "PPP", new Date()),
-            addWitnesses: !!data.witnesses,
             witnesses: data.witnesses || [],
           });
+          setSelectedWitnesses(data.witnesses || []);
         } else {
           toast({ title: "Error", description: "Qarz record not found.", variant: "destructive" });
         }
       }).finally(() => setIsLoading(false));
     }
   }, [qarzId, firestore, user, form, toast]);
+  
+  useEffect(() => {
+    form.setValue('witnesses', selectedWitnesses);
+  }, [selectedWitnesses, form]);
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "witnesses",
-  });
 
-  const watchAddWitnesses = form.watch("addWitnesses");
-
+  const handleWitnessSelect = (witness: Witness) => {
+    setSelectedWitnesses(prev => 
+      prev.some(w => w.id === witness.id)
+        ? prev.filter(w => w.id !== witness.id)
+        : [...prev, witness]
+    );
+  };
+  
   async function onSubmit(data: z.infer<typeof qarzSchema>) {
     if (!user || !firestore) {
       toast({
@@ -110,11 +126,8 @@ export default function QarzPage() {
       userId: user.uid,
       startDate: format(data.startDate, "PPP"),
       dueDate: format(data.dueDate, "PPP"),
+      witnesses: selectedWitnesses, // Save selected witnesses
     };
-
-    if (!data.addWitnesses) {
-      delete qarzData.witnesses;
-    }
     
     if (qarzId) {
       // Update existing record
@@ -147,6 +160,7 @@ export default function QarzPage() {
             description: "The debt has been successfully recorded.",
           });
           form.reset();
+          setSelectedWitnesses([]);
         })
         .catch(async (error) => {
           errorEmitter.emit("permission-error", new FirestorePermissionError({
@@ -306,97 +320,72 @@ export default function QarzPage() {
                   />
                 </div>
 
-                 <FormField
-                  control={form.control}
-                  name="addWitnesses"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Do you want to add witnesses?
-                        </FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-                
-                {watchAddWitnesses && (
-                  <Card className="p-4 border-2">
-                    <CardHeader className="p-2">
-                      <CardTitle className="text-lg text-primary">Witness Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4 p-2">
-                      {fields.map((field, index) => (
-                        <div key={field.id} className="p-4 border rounded-lg relative">
-                          <h4 className="font-semibold mb-2">Witness {index + 1}</h4>
-                          <Separator className="mb-4" />
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`witnesses.${index}.name`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Name (Mandatory)</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="e.g., Bilal Ahmed" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={`witnesses.${index}.cnic`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>CNIC</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="e.g., 42201-1234567-1" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name={`witnesses.${index}.email`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Email</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="e.g., witness@example.com" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                <div className="space-y-4">
+                    <FormLabel>Witnesses</FormLabel>
+                    <Card className="p-4 border-dashed">
+                      <CardContent className="p-0">
+                        {selectedWitnesses.length > 0 ? (
+                          <div className="space-y-2">
+                            {selectedWitnesses.map(w => (
+                              <Badge key={w.id} variant="secondary" className="mr-2">
+                                {w.name}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-4 w-4 ml-1"
+                                  onClick={() => setSelectedWitnesses(prev => prev.filter(sw => sw.id !== w.id))}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ))}
                           </div>
-                          <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={() => remove(index)}>
-                            <Trash2 className="text-destructive" />
-                          </Button>
-                        </div>
-                      ))}
-                       <FormMessage>{form.formState.errors.witnesses?.root?.message}</FormMessage>
-
-                      {fields.length < 3 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => append({ name: "", cnic: "", email: "" })}
-                        >
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add Witness
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No witnesses selected.</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline"><UserCheck className="mr-2 h-4 w-4" /> Select Witnesses</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Select Witnesses</DialogTitle>
+                                <DialogDescription>Choose from your saved witnesses.</DialogDescription>
+                            </DialogHeader>
+                            <ScrollArea className="max-h-64">
+                                <div className="space-y-2 p-1">
+                                    {witnessesLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                                    {!witnessesLoading && availableWitnesses?.map(witness => (
+                                        <div key={witness.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                            <Checkbox
+                                                id={`witness-${witness.id}`}
+                                                onCheckedChange={() => handleWitnessSelect(witness)}
+                                                checked={selectedWitnesses.some(w => w.id === witness.id)}
+                                            />
+                                            <label
+                                                htmlFor={`witness-${witness.id}`}
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                                            >
+                                                {witness.name} ({witness.cnic})
+                                            </label>
+                                        </div>
+                                    ))}
+                                    {!witnessesLoading && availableWitnesses?.length === 0 && (
+                                        <p className="text-center text-muted-foreground p-4">No saved witnesses. Add one from the Witnesses page.</p>
+                                    )}
+                                </div>
+                            </ScrollArea>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button>Done</Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
 
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-end">
@@ -416,3 +405,5 @@ export default function QarzPage() {
     </div>
   );
 }
+
+    
