@@ -2,11 +2,12 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
-import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangle, Edit, Save, Trash2, PlusCircle } from "lucide-react";
+import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangle, Edit, Save, Trash2, PlusCircle, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { collection, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, getDoc } from "firebase/firestore";
+import { useSearchParams } from 'next/navigation';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,11 +52,14 @@ export default function WasiyatPage() {
   const { user } = useUser();
   const draftContainerRef = useRef<HTMLDivElement>(null);
   const [existingWill, setExistingWill] = useState<WasiyatDoc | null>(null);
+  const searchParams = useSearchParams();
+  const wasiyatId = searchParams.get('id');
+  const [isLoading, setIsLoading] = useState(false);
 
   const wasiyatQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user?.uid || wasiyatId) return null; // Don't run this if we are editing a specific will by ID
     return query(collection(firestore, `users/${user.uid}/wasiyats`), orderBy("createdAt", "desc"));
-  }, [firestore, user?.uid]);
+  }, [firestore, user?.uid, wasiyatId]);
 
   const { data: wasiyatDocs, loading: wasiyatLoading } = useCollection<WasiyatDoc>(wasiyatQuery, {
       onSuccess: (data) => {
@@ -68,9 +72,30 @@ export default function WasiyatPage() {
       },
   });
 
+  useEffect(() => {
+    if (wasiyatId && firestore && user) {
+        setIsLoading(true);
+        const docRef = doc(firestore, `users/${user.uid}/wasiyats`, wasiyatId);
+        getDoc(docRef).then(docSnap => {
+            if (docSnap.exists()) {
+                const data = docSnap.data() as Omit<WasiyatDoc, 'id'>;
+                const willData = { id: docSnap.id, ...data };
+                setExistingWill(willData);
+                setWillDraft(willData.will);
+                setEditedWill(willData.will);
+                setIsEditing(true);
+            } else {
+                toast({ title: "Error", description: "Will record not found.", variant: "destructive" });
+            }
+        }).finally(() => setIsLoading(false));
+    } else {
+        setIsLoading(wasiyatLoading);
+    }
+  }, [wasiyatId, firestore, user, toast, wasiyatLoading]);
+
   const witnessesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, `users/${user.uid}/witnesses`));
+    return query(collection(firestore, `users/${user?.uid}/witnesses`));
   }, [firestore, user?.uid]);
 
   const { data: witnesses, loading: witnessesLoading } = useCollection<Witness>(witnessesQuery);
@@ -243,7 +268,7 @@ export default function WasiyatPage() {
 
 
   const renderContent = () => {
-      if(wasiyatLoading) {
+      if(isLoading) {
           return (
              <div className="lg:col-span-1 flex flex-col gap-6 print:hidden">
                 <Card className="border-2"><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
@@ -412,16 +437,17 @@ export default function WasiyatPage() {
                     <CardDescription>This is your will document. Please review it carefully.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col print:p-0">
-                    {isPending && <div className="text-center p-8 m-auto">Generating your will draft... <Sparkles className="inline-block animate-pulse" /></div>}
+                    {isLoading && <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Loading Will...</p></div>}
                     
-                    {!isPending && !willDraft && !isEditing && (
+                    {!isLoading && isPending && <div className="text-center p-8 m-auto">Generating your will draft... <Sparkles className="inline-block animate-pulse" /></div>}
+                    
+                    {!isLoading && !isPending && !willDraft && !isEditing && (
                         <div className="m-auto text-center p-8 text-muted-foreground print:hidden">
-                            {wasiyatLoading ? <p>Loading your existing will...</p> : 
-                            <p>Choose an option to start creating your will, or edit an existing one.</p>}
+                           <p>Choose an option to start creating your will, or edit an existing one.</p>
                         </div>
                     )}
 
-                    {(willDraft || isEditing) && (
+                    {(willDraft || isEditing) && !isLoading && (
                         <div className="space-y-6 flex-1 flex flex-col">
                              <Alert variant="destructive" className="print:hidden">
                                 <AlertTriangle className="h-4 w-4" />
@@ -513,3 +539,5 @@ export default function WasiyatPage() {
     </div>
   );
 }
+
+    

@@ -144,7 +144,7 @@ export default function DashboardPage() {
                                                 </div>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => router.push('/dashboard/wasiyat')}>
+                                                <AlertDialogAction onClick={() => router.push(`/dashboard/wasiyat?id=${item.id}`)}>
                                                     <Edit className="mr-2 h-4 w-4" /> Edit
                                                 </AlertDialogAction>
                                             </AlertDialogFooter>
@@ -255,3 +255,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
