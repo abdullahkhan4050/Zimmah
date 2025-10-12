@@ -36,7 +36,7 @@ const manualWasiyatSchema = z.object({
 
 type WriteMode = "ai" | "manual" | null;
 type Witness = { id: string; name: string; cnic: string };
-type WasiyatDoc = { id: string; will: string; type: string };
+type WasiyatDoc = { id: string; will: string; type: string; createdAt: any; };
 
 export default function WasiyatPage() {
   const { toast } = useToast();
@@ -51,7 +51,6 @@ export default function WasiyatPage() {
   const { user } = useUser();
   const draftContainerRef = useRef<HTMLDivElement>(null);
   const [existingWill, setExistingWill] = useState<WasiyatDoc | null>(null);
-  const [isLoadingWill, setIsLoadingWill] = useState(true);
 
   const wasiyatQuery = useMemo(() => {
     if (!firestore || !user) return null;
@@ -68,11 +67,7 @@ export default function WasiyatPage() {
               setExistingWill(null);
               setWillDraft(null);
           }
-          setIsLoadingWill(false);
       },
-      onError: () => {
-          setIsLoadingWill(false);
-      }
   });
 
   const witnessesQuery = useMemo(() => {
@@ -234,18 +229,18 @@ export default function WasiyatPage() {
 
     setEditedWill(newWillContent);
     if (!isEditing) {
-        setWillDraft(newWillContent);
+        setIsEditing(true); // Switch to edit mode after assigning witnesses to a non-saved draft
     }
     
     toast({
       title: "Witnesses Assigned",
-      description: "The selected witnesses have been added to your will draft."
+      description: "The selected witnesses have been added to your will draft. You can now save the changes."
     });
   };
 
 
   const renderContent = () => {
-      if(isLoadingWill) {
+      if(wasiyatLoading) {
           return (
              <div className="lg:col-span-1 flex flex-col gap-6 print:hidden">
                 <Card className="border-2"><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
@@ -300,7 +295,7 @@ export default function WasiyatPage() {
 
       return (
         <div className="lg:col-span-1 flex flex-col gap-6 print:hidden">
-            {!writeMode && (
+            {!writeMode && !isEditing && (
                 <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="text-primary">How would you like to create your will?</CardTitle>
@@ -324,7 +319,7 @@ export default function WasiyatPage() {
                 </Card>
             )}
 
-            {writeMode === 'ai' && (
+            {writeMode === 'ai' && !isEditing && (
                 <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
@@ -361,7 +356,7 @@ export default function WasiyatPage() {
                 </Card>
             )}
 
-            {writeMode === 'manual' && (
+            {writeMode === 'manual' && !isEditing && (
                  <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
@@ -416,21 +411,14 @@ export default function WasiyatPage() {
                 <CardContent className="flex-1 flex flex-col print:p-0">
                     {isPending && <div className="text-center p-8 m-auto">Generating your will draft... <Sparkles className="inline-block animate-pulse" /></div>}
                     
-                    {!isPending && !willDraft && (
+                    {!isPending && !willDraft && !isEditing && (
                         <div className="m-auto text-center p-8 text-muted-foreground print:hidden">
-                            {wasiyatLoading && <p>Loading your existing will...</p>}
-                            {!wasiyatLoading && (
-                                <>
-                                    {writeMode === 'ai' && "Your AI-generated will draft will appear here."}
-                                    {writeMode === 'manual' && "Your manually saved will will appear here after saving."}
-                                    {!writeMode && !existingWill && "Choose an option to start creating your will."}
-                                    {existingWill && "Your existing will is shown. You can edit it from the panel on the left."}
-                                </>
-                            )}
+                            {wasiyatLoading ? <p>Loading your existing will...</p> : 
+                            <p>Choose an option to start creating your will, or edit an existing one.</p>}
                         </div>
                     )}
 
-                    {willDraft && (
+                    {(willDraft || editedWill) && (
                         <div className="space-y-6 flex-1 flex flex-col">
                              <Alert variant="destructive" className="print:hidden">
                                 <AlertTriangle className="h-4 w-4" />
@@ -460,7 +448,7 @@ export default function WasiyatPage() {
                                         </>
                                     ) : (
                                         <>
-                                            {!existingWill && willDraft && (
+                                            {!existingWill && willDraft && writeMode === 'ai' && (
                                                 <Button onClick={() => handleSaveWill(willDraft, 'ai')}><Save className="mr-2 h-4 w-4" /> Save AI Draft</Button>
                                             )}
                                         </>
@@ -522,5 +510,6 @@ export default function WasiyatPage() {
     </div>
   );
 }
+    
 
     
