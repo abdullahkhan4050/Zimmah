@@ -87,7 +87,8 @@ export default function QarzPage() {
       delete qarzData.witnesses;
     }
     
-    const collectionRef = collection(firestore, "qarz");
+    const collectionPath = `users/${user.uid}/qarzs`;
+    const collectionRef = collection(firestore, collectionPath);
 
     addDoc(collectionRef, qarzData)
       .then(() => {

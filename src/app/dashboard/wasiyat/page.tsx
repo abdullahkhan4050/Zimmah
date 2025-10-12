@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useRef, useMemo, useEffect } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangle, Edit, Save, Trash2, PlusCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateWillAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { useFirestore, useUser, useCollection } from "@/firebase";
+import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -52,9 +52,9 @@ export default function WasiyatPage() {
   const draftContainerRef = useRef<HTMLDivElement>(null);
   const [existingWill, setExistingWill] = useState<WasiyatDoc | null>(null);
 
-  const wasiyatQuery = useMemo(() => {
+  const wasiyatQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, "wasiyat"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+    return query(collection(firestore, `users/${user.uid}/wasiyats`), orderBy("createdAt", "desc"));
   }, [firestore, user?.uid]);
 
   const { data: wasiyatDocs, loading: wasiyatLoading } = useCollection<WasiyatDoc>(wasiyatQuery, {
@@ -70,9 +70,9 @@ export default function WasiyatPage() {
       },
   });
 
-  const witnessesQuery = useMemo(() => {
+  const witnessesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, "witnesses"), where("userId", "==", user.uid));
+    return query(collection(firestore, `users/${user.uid}/witnesses`));
   }, [firestore, user?.uid]);
 
   const { data: witnesses, loading: witnessesLoading } = useCollection<Witness>(witnessesQuery);
@@ -131,7 +131,8 @@ export default function WasiyatPage() {
       createdAt: serverTimestamp(),
     };
     
-    const collectionRef = collection(firestore, "wasiyat");
+    const collectionPath = `users/${user.uid}/wasiyats`;
+    const collectionRef = collection(firestore, collectionPath);
 
     addDoc(collectionRef, wasiyatData)
       .then((docRef) => {
@@ -154,9 +155,9 @@ export default function WasiyatPage() {
   }
 
    const handleEditSave = async () => {
-    if (!editedWill || !existingWill || !firestore) return;
+    if (!editedWill || !existingWill || !firestore || !user) return;
     
-    const docRef = doc(firestore, "wasiyat", existingWill.id);
+    const docRef = doc(firestore, `users/${user.uid}/wasiyats`, existingWill.id);
     
     updateDoc(docRef, { will: editedWill })
         .then(() => {
@@ -178,8 +179,8 @@ export default function WasiyatPage() {
   };
 
   const handleRecreate = async () => {
-    if (!existingWill || !firestore) return;
-    const docRef = doc(firestore, "wasiyat", existingWill.id);
+    if (!existingWill || !firestore || !user) return;
+    const docRef = doc(firestore, `users/${user.uid}/wasiyats`, existingWill.id);
     
     deleteDoc(docRef).then(() => {
         setExistingWill(null);

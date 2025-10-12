@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useCollection, useUser } from "@/firebase";
+import { useFirestore, useCollection, useUser, useMemoFirebase } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -43,9 +43,9 @@ export default function WitnessesPage() {
     }
   });
 
-  const witnessesQuery = useMemo(() => {
+  const witnessesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, "witnesses"), where("userId", "==", user.uid));
+    return query(collection(firestore, `users/${user.uid}/witnesses`));
   }, [firestore, user?.uid]);
 
   const { data: witnesses, loading } = useCollection<Witness>(witnessesQuery);
@@ -66,7 +66,8 @@ export default function WitnessesPage() {
       createdAt: serverTimestamp(),
     };
     
-    const collectionRef = collection(firestore, "witnesses");
+    const collectionPath = `users/${user.uid}/witnesses`;
+    const collectionRef = collection(firestore, collectionPath);
     
     addDoc(collectionRef, witnessData)
     .then(() => {

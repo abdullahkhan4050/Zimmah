@@ -26,9 +26,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { collection, orderBy, query, where } from "firebase/firestore";
-import { useCollection, useFirestore, useUser } from "@/firebase";
+import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -42,21 +42,21 @@ export default function DashboardPage() {
     const userName = user?.displayName || "User";
     const firestore = useFirestore();
 
-    const wasiyatQuery = useMemo(() => {
+    const wasiyatQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, "wasiyat"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+        return query(collection(firestore, `users/${user.uid}/wasiyats`), orderBy("createdAt", "desc"));
     }, [firestore, user?.uid]);
     const { data: wasiyat, loading: wasiyatLoading } = useCollection<Wasiyat>(wasiyatQuery);
     
-    const qarzQuery = useMemo(() => {
+    const qarzQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, "qarz"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+        return query(collection(firestore, `users/${user.uid}/qarzs`), orderBy("createdAt", "desc"));
     }, [firestore, user?.uid]);
     const { data: qarz, loading: qarzLoading } = useCollection<Qarz>(qarzQuery);
 
-    const amanatQuery = useMemo(() => {
+    const amanatQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
-        return query(collection(firestore, "amanat"), where("userId", "==", user.uid));
+        return query(collection(firestore, `users/${user.uid}/amanats`));
     }, [firestore, user?.uid]);
     const { data: amanat, loading: amanatLoading } = useCollection<Amanat>(amanatQuery);
 

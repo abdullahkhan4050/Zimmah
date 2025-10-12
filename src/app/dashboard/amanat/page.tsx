@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { errorEmitter } from "@/firebase/error-emitter";
@@ -86,7 +86,8 @@ export default function AmanatPage() {
       delete amanatData.witnesses;
     }
     
-    const collectionRef = collection(firestore, "amanat");
+    const collectionPath = `users/${user.uid}/amanats`;
+    const collectionRef = collection(firestore, collectionPath);
     
     addDoc(collectionRef, amanatData)
     .then(() => {

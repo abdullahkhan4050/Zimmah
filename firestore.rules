@@ -1,183 +1,28 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Checks if the request is authenticated.
-     */
-    function isSignedIn() {
-      return request.auth != null;
+    // By default, deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    /**
-     * @description Checks if the authenticated user ID matches the provided user ID.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the authenticated user owns the existing document.
-     */
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-    }
-
-    /**
-     * @description Enforces that the user ID in the path matches the user ID in the request data.
-     */
-    function isValidOwnerIdOnCreate(userId) {
-      return request.resource.data.id == userId;
-    }
-
-    /**
-     * @description Enforces immutability of the user ID field on updates.
-     */
-    function isOwnerIdImmutable(userId) {
-      return request.resource.data.id == resource.data.id;
-    }
-
-    /**
-     * @description
-     * @path /users/{userId}
-     * @allow (create) - User with UID 'user123' can create their own user document.
-     *     request.auth.uid = 'user123'
-     *     request.resource.data.id = 'user123'
-     * @allow (get) - User with UID 'user123' can read their own user document.
-     *     request.auth.uid = 'user123'
-     * @deny (create) - User with UID 'user456' cannot create a user document for 'user123'.
-     *     request.auth.uid = 'user456'
-     *     request.resource.data.id = 'user123'
-     * @deny (update) - User with UID 'user456' cannot update the user document for 'user123'.
-     *     request.auth.uid = 'user456'
-     * @principle Enforces document ownership and prevents unauthorized data modification.
-     */
+    // USERS
+    // Users can read and write their own profile
     match /users/{userId} {
-      // Only allow authenticated users to read their own user document.
-      allow get: if isOwner(userId);
-      // Prevent listing of all user documents.
-      allow list: if false;
-
-      // Allow users to create their own user document if the userId matches their auth.uid.
-      allow create: if isSignedIn() && request.auth.uid == userId;
-
-      // Allow users to update their own user document.
-      allow update: if isOwner(userId);
-
-      // Allow users to delete their own user document.
-      allow delete: if isOwner(userId);
+      allow read, write: if request.auth.uid == userId;
     }
 
-    /**
-     * @description
-     * @path /users/{userId}/qarzs/{qarzId}
-     * @allow (create) - User with UID 'user123' can create a Qarz document in their collection.
-     *     request.auth.uid = 'user123'
-     * @allow (get) - User with UID 'user123' can read a Qarz document in their collection.
-     *     request.auth.uid = 'user123'
-     * @deny (create) - User with UID 'user456' cannot create a Qarz document in 'user123's collection.
-     *     request.auth.uid = 'user456'
-     * @deny (update) - User with UID 'user456' cannot update a Qarz document in 'user123's collection.
-     *     request.auth.uid = 'user456'
-     * @principle Enforces document ownership and prevents unauthorized data modification.
-     */
-    match /users/{userId}/qarzs/{qarzId} {
-      // Only allow the owner to read their own qarzs.
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-
-      // Only allow the owner to create new qarzs.
-      allow create: if isOwner(userId);
-
-      // Only allow the owner to update existing qarzs.
-      allow update: if isOwner(userId);
-
-      // Only allow the owner to delete their own qarzs.
-      allow delete: if isOwner(userId);
+    // USER-OWNED COLLECTIONS (Qarz, Amanat, Wasiyat, etc.)
+    // A user can perform all operations (create, read, update, delete) on documents
+    // within their own subcollections (e.g., /users/{userId}/qarzs/{qarzId})
+    match /users/{userId}/{collection}/{docId} {
+      allow read, write: if request.auth.uid == userId;
     }
-
-    /**
-     * @description
-     * @path /users/{userId}/amanats/{amanatId}
-     * @allow (create) - User with UID 'user123' can create an Amanat document in their collection.
-     *     request.auth.uid = 'user123'
-     * @allow (get) - User with UID 'user123' can read an Amanat document in their collection.
-     *     request.auth.uid = 'user123'
-     * @deny (create) - User with UID 'user456' cannot create an Amanat document in 'user123's collection.
-     *     request.auth.uid = 'user456'
-     * @deny (update) - User with UID 'user456' cannot update an Amanat document in 'user123's collection.
-     *     request.auth.uid = 'user456'
-     * @principle Enforces document ownership and prevents unauthorized data modification.
-     */
-    match /users/{userId}/amanats/{amanatId} {
-      // Only allow the owner to read their own amanats.
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-
-      // Only allow the owner to create new amanats.
-      allow create: if isOwner(userId);
-
-      // Only allow the owner to update existing amanats.
-      allow update: if isOwner(userId);
-
-      // Only allow the owner to delete their own amanats.
-      allow delete: if isOwner(userId);
-    }
-
-    /**
-     * @description
-     * @path /users/{userId}/wasiyats/{wasiyatId}
-     * @allow (create) - User with UID 'user123' can create a Wasiyat document in their collection.
-     *     request.auth.uid = 'user123'
-     * @allow (get) - User with UID 'user123' can read a Wasiyat document in their collection.
-     *     request.auth.uid = 'user123'
-     * @deny (create) - User with UID 'user456' cannot create a Wasiyat document in 'user123's collection.
-     *     request.auth.uid = 'user456'
-     * @deny (update) - User with UID 'user456' cannot update a Wasiyat document in 'user123's collection.
-     *     request.auth.uid = 'user456'
-     * @principle Enforces document ownership and prevents unauthorized data modification.
-     */
-    match /users/{userId}/wasiyats/{wasiyatId} {
-      // Only allow the owner to read their own wasiyats.
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-
-      // Only allow the owner to create new wasiyats.
-      allow create: if isOwner(userId);
-
-      // Only allow the owner to update existing wasiyats.
-      allow update: if isOwner(userId);
-
-      // Only allow the owner to delete their own wasiyats.
-      allow delete: if isOwner(userId);
-    }
-
-    /**
-     * @description
-     * @path /users/{userId}/notifications/{notificationId}
-     * @allow (create) - User with UID 'user123' can create a Notification document in their collection.
-     *     request.auth.uid = 'user123'
-     * @allow (get) - User with UID 'user123' can read a Notification document in their collection.
-     *     request.auth.uid = 'user123'
-     * @deny (create) - User with UID 'user456' cannot create a Notification document in 'user123's collection.
-     *     request.auth.uid = 'user456'
-     * @deny (update) - User with UID 'user456' cannot update a Notification document in 'user123's collection.
-     *     request.auth.uid = 'user456'
-     * @principle Enforces document ownership and prevents unauthorized data modification.
-     */
-    match /users/{userId}/notifications/{notificationId} {
-      // Only allow the owner to read their own notifications.
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-
-      // Only allow the owner to create new notifications.
-      allow create: if isOwner(userId);
-
-      // Only allow the owner to update existing notifications.
-      allow update: if isOwner(userId);
-
-      // Only allow the owner to delete their own notifications.
-      allow delete: if isOwner(userId);
-    }
+    
   }
 }
+
+    
