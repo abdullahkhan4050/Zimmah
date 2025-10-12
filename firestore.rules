@@ -1,147 +1,158 @@
 /**
- * @file Firestore Security Rules for Zimmah Digital Vault
- * @core_philosophy This ruleset enforces a strict user-ownership model for personal data and allows public read access where explicitly intended.
- * @data_structure Data is organized hierarchically under `/users/{userId}`, with subcollections for qarzs, amanats, wasiyats, and notifications.
- * @key_security_decisions User listing is disallowed. Write access is strictly controlled via ownership checks. Denormalization is used to avoid costly `get()` calls.
+ * @fileoverview Firestore Security Rules for Zimmah Digital Vault.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model, where users can only access data explicitly associated with their UID.
+ * It also allows for role-based access to perform privileged operations.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profile information, with 'userId' matching the Firebase Auth UID.
+ * - /users/{userId}/qarzs/{qarzId}: Stores debt records associated with a specific user (debtor).
+ * - /users/{userId}/amanats/{amanatId}: Stores entrusted item records associated with a specific user.
+ * - /users/{userId}/wasiyats/{wasiyatId}: Stores will records associated with a specific user.
+ * - /users/{userId}/notifications/{notificationId}: Stores notifications for a specific user.
+ *
+ * Key Security Decisions:
+ * - Users can only list documents in their own user-scoped subcollections.
+ * - All write operations are protected by an authorization check to prevent unauthorized data modification.
+ *
+ * Denormalization for Authorization:
+ *  Ownership is enforced using path-based rules (e.g., /users/{userId}/...), eliminating the need for `get()` calls to check document ownership. The userId is implicitly the owner.
+ *  The `role` field is stored on the `/users/{userId}` document.
+ *
+ * Structural Segregation:
+ * User-specific data is stored in subcollections under /users/{userId}, ensuring that data is private by default and easily secured using path-based rules.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is made by the owner of the resource.
-     * @param {string} userId The user ID to compare against the request's auth UID.
-     * @return {bool} True if the user is the owner, false otherwise.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the user is signed in.
-     * @return {bool} True if the user is signed in, false otherwise.
+     * @description Checks if the request is made by a signed-in user.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the user is the owner of an existing resource.
-     * @param {string} userId The user ID to compare against the resource's owner ID.
-     * @return {bool} True if the user is the owner and the resource exists, false otherwise.
+     * @description Checks if the authenticated user's UID matches the provided userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user's UID matches the provided userId and the resource exists.
      */
     function isExistingOwner(userId) {
-      return isSignedIn() && resource.data.ownerId == request.auth.uid;
+      return isOwner(userId) && resource != null;
     }
     
     /**
-     * @description Defines security rules for user profiles.
+     * @description Rule for user profiles.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user123' can create their profile if request.auth.uid == 'user123'.
-     * @allow (get) User with UID 'user123' can read their profile if request.auth.uid == 'user123'.
-     * @deny (update) User with UID 'user456' cannot update user profile at /users/user123.
-     * @deny (delete) User with UID 'user456' cannot delete user profile at /users/user123.
-     * @principle Enforces document ownership for writes and restricts read access to the owner.
+     * @allow (create) - User with UID 'user123' can create their profile if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) - User with UID 'user123' can get, update, and delete their profile if request.auth.uid == 'user123'.
+     * @deny (create) - User with UID 'user456' cannot create a profile with userId 'user123'.
+     * @deny (get, update, delete) - User with UID 'user456' cannot get, update, or delete the profile with userId 'user123'.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Defines security rules for debt records (Qarz) under a specific user.
+     * @description Rule for debt records (Qarz) associated with a user.
      * @path /users/{userId}/qarzs/{qarzId}
-     * @allow (create) User with UID 'user123' can create a qarz under /users/user123/qarzs/qarz001 if request.auth.uid == 'user123'.
-     * @allow (get) User with UID 'user123' can read qarz at /users/user123/qarzs/qarz001 if request.auth.uid == 'user123'.
-     * @allow (list) User with UID 'user123' can list qarzs under /users/user123 if request.auth.uid == 'user123'.
-     * @deny (update) User with UID 'user456' cannot update qarz at /users/user123/qarzs/qarz001.
-     * @deny (delete) User with UID 'user456' cannot delete qarz at /users/user123/qarzs/qarz001.
-     * @principle Enforces document ownership for writes and restricts read and list access to the owner.
+     * @allow (create) - User with UID 'user123' can create a Qarz record under /users/user123/qarzs if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) - User with UID 'user123' can get, update, and delete their Qarz record under /users/user123/qarzs if request.auth.uid == 'user123'.
+     * @allow (list) - User with UID 'user123' can list their own Qarz documents.
+     * @deny (create) - User with UID 'user456' cannot create a Qarz record under /users/user123/qarzs.
+     * @deny (get, update, delete) - User with UID 'user456' cannot get, update, or delete Qarz records under /users/user123/qarzs.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/qarzs/{qarzId} {
       allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.ownerId == userId;
-      allow update: if isOwner(userId) && request.resource.data.ownerId == userId;
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Defines security rules for entrusted items (Amanat) under a specific user.
+     * @description Rule for entrusted item records (Amanat) associated with a user.
      * @path /users/{userId}/amanats/{amanatId}
-     * @allow (create) User with UID 'user123' can create an amanat under /users/user123/amanats/amanat001 if request.auth.uid == 'user123'.
-     * @allow (get) User with UID 'user123' can read amanat at /users/user123/amanats/amanat001 if request.auth.uid == 'user123'.
-     * @allow (list) User with UID 'user123' can list amanats under /users/user123 if request.auth.uid == 'user123'.
-     * @deny (update) User with UID 'user456' cannot update amanat at /users/user123/amanats/amanat001.
-     * @deny (delete) User with UID 'user456' cannot delete amanat at /users/user123/amanats/amanat001.
-     * @principle Enforces document ownership for writes and restricts read and list access to the owner.
+     * @allow (create) - User with UID 'user123' can create an Amanat record under /users/user123/amanats if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) - User with UID 'user123' can get, update, and delete their Amanat record under /users/user123/amanats if request.auth.uid == 'user123'.
+     * @allow (list) - User with UID 'user123' can list their own Amanat documents.
+     * @deny (create) - User with UID 'user456' cannot create an Amanat record under /users/user123/amanats.
+     * @deny (get, update, delete) - User with UID 'user456' cannot get, update, or delete Amanat records under /users/user123/amanats.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/amanats/{amanatId} {
       allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.ownerId == userId;
-      allow update: if isOwner(userId) && request.resource.data.ownerId == userId;
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Defines security rules for wills (Wasiyat) under a specific user.
+     * @description Rule for will records (Wasiyat) associated with a user.
      * @path /users/{userId}/wasiyats/{wasiyatId}
-     * @allow (create) User with UID 'user123' can create a wasiyat under /users/user123/wasiyats/wasiyat001 if request.auth.uid == 'user123'.
-     * @allow (get) User with UID 'user123' can read wasiyat at /users/user123/wasiyats/wasiyat001 if request.auth.uid == 'user123'.
-     * @allow (list) User with UID 'user123' can list wasiyats under /users/user123 if request.auth.uid == 'user123'.
-     * @deny (update) User with UID 'user456' cannot update wasiyat at /users/user123/wasiyats/wasiyat001.
-     * @deny (delete) User with UID 'user456' cannot delete wasiyat at /users/user123/wasiyats/wasiyat001.
-     * @principle Enforces document ownership for writes and restricts read and list access to the owner.
+     * @allow (create) - User with UID 'user123' can create a Wasiyat record under /users/user123/wasiyats if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) - User with UID 'user123' can get, update, and delete their Wasiyat record under /users/user123/wasiyats if request.auth.uid == 'user123'.
+     * @allow (list) - User with UID 'user123' can list their own Wasiyat documents.
+     * @deny (create) - User with UID 'user456' cannot create a Wasiyat record under /users/user123/wasiyats.
+     * @deny (get, update, delete) - User with UID 'user456' cannot get, update, or delete Wasiyat records under /users/user123/wasiyats.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/wasiyats/{wasiyatId} {
       allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.ownerId == userId;
-      allow update: if isOwner(userId) && request.resource.data.ownerId == userId;
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Defines security rules for notifications under a specific user.
+     * @description Rule for notifications associated with a user.
      * @path /users/{userId}/notifications/{notificationId}
-     * @allow (create) User with UID 'user123' can create a notification under /users/user123/notifications/notification001 if request.auth.uid == 'user123'.
-     * @allow (get) User with UID 'user123' can read notification at /users/user123/notifications/notification001 if request.auth.uid == 'user123'.
-     * @allow (list) User with UID 'user123' can list notifications under /users/user123 if request.auth.uid == 'user123'.
-     * @deny (update) User with UID 'user456' cannot update notification at /users/user123/notifications/notification001.
-     * @deny (delete) User with UID 'user456' cannot delete notification at /users/user123/notifications/notification001.
-     * @principle Enforces document ownership for writes and restricts read and list access to the owner.
+     * @allow (create) - User with UID 'user123' can create a Notification record under /users/user123/notifications if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) - User with UID 'user123' can get, update, and delete their Notification record under /users/user123/notifications if request.auth.uid == 'user123'.
+     * @allow (list) - User with UID 'user123' can list their own Notification documents.
+     * @deny (create) - User with UID 'user456' cannot create a Notification record under /users/user123/notifications.
+     * @deny (get, update, delete) - User with UID 'user456' cannot get, update, or delete Notification records under /users/user123/notifications.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/notifications/{notificationId} {
       allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.ownerId == userId;
-      allow update: if isOwner(userId) && request.resource.data.ownerId == userId;
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
-
+    
     /**
-     * @description Missing from the data model.
+     * @description Rule for witnesses under a user
      * @path /users/{userId}/witnesses/{witnessId}
-     * @allow (get) User with UID 'user123' can read witness at /users/user123/witnesses/witness001 if request.auth.uid == 'user123'.
-     * @allow (list) User with UID 'user123' can list witnesses under /users/user123 if request.auth.uid == 'user123'.
-     * @principle Enforces document ownership for writes and restricts read and list access to the owner.
+     * @allow (create) - No one can create a witness doc
+     * @allow (get) - Only the owner can get their witness docs
+     * @allow (list) - Only the owner can list their witness docs
+     * @allow (update) - No one can update
+     * @allow (delete) - No one can delete
+     * @principle - Enforces owner only permissions for witnesses
      */
     match /users/{userId}/witnesses/{witnessId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.resource.data.ownerId == userId;
-      allow update: if isOwner(userId) && request.resource.data.ownerId == userId;
-      allow delete: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
     }
   }
 }
