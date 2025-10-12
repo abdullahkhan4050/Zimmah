@@ -3,30 +3,25 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own data
+    // Helper function to check ownership
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /pending_users/{userId} {
-      allow read, create: if request.auth == null;
-      allow delete: if request.auth != null;
+      // Users can read and write to their own profile document
+      allow read, write: if isOwner(userId);
     }
 
-    match /qarz/{docId} {
-      allow read, create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /amanat/{docId} {
-      allow read, create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
-
-    match /wasiyat/{docId} {
-      allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-    
-    match /witnesses/{docId} {
-      allow read, create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    // Rules for user-generated content collections
+    match /{collection}/{docId} {
+      // Allow read access if the user is the owner of the document
+      allow read: if isOwner(resource.data.userId);
+      // Allow create access for any authenticated user
+      allow create: if request.auth != null;
+      // Allow update and delete access if the user is the owner
+      allow update, delete: if isOwner(resource.data.userId);
     }
   }
 }
