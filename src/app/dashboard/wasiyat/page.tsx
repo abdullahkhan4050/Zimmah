@@ -161,23 +161,15 @@ export default function WasiyatPage() {
     
     const updatedData = { will: editedWill };
 
-    updateDoc(docRef, updatedData)
-        .then(() => {
-            setWillDraft(editedWill);
-            setExistingWill(prev => prev ? { ...prev, will: editedWill } : null);
-            setIsEditing(false);
-            toast({
-                title: "Changes Saved",
-                description: "Your edits to the will have been saved.",
-            });
-        })
-        .catch(error => {
-            errorEmitter.emit("permission-error", new FirestorePermissionError({
-                path: docRef.path,
-                operation: "update",
-                requestResourceData: updatedData,
-            }));
-        });
+    updateDocumentNonBlocking(docRef, updatedData);
+
+    setWillDraft(editedWill);
+    setExistingWill(prev => prev ? { ...prev, will: editedWill } : null);
+    setIsEditing(false);
+    toast({
+        title: "Changes Saved",
+        description: "Your edits to the will have been saved.",
+    });
   };
 
   const handleRecreate = async () => {
