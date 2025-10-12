@@ -4,10 +4,11 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { HeartHandshake, CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
-import { format } from "date-fns";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useMemo } from "react";
+import { HeartHandshake, CalendarIcon, PlusCircle, Trash2, Save } from "lucide-react";
+import { format, parse } from "date-fns";
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from "firebase/firestore";
+import { useMemo, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Loader2 } from "lucide-react";
 
 const witnessSchema = z.object({
   name: z.string().min(2, "Witness name is required."),
@@ -46,6 +48,10 @@ export default function AmanatPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const amanatId = searchParams.get('id');
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<z.infer<typeof amanatSchema>>({
     resolver: zodResolver(amanatSchema),
@@ -58,6 +64,28 @@ export default function AmanatPage() {
     }
   });
 
+  useEffect(() => {
+    if (amanatId && firestore && user) {
+      setIsLoading(true);
+      const docRef = doc(firestore, `users/${user.uid}/amanats`, amanatId);
+      getDoc(docRef).then(docSnap => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          form.reset({
+            item: data.item,
+            description: data.description,
+            entrustee: data.entrustee,
+            returnDate: parse(data.returnDate, "PPP", new Date()),
+            addWitnesses: !!data.witnesses,
+            witnesses: data.witnesses || [],
+          });
+        } else {
+          toast({ title: "Error", description: "Amanat record not found.", variant: "destructive" });
+        }
+      }).finally(() => setIsLoading(false));
+    }
+  }, [amanatId, firestore, user, form, toast]);
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "witnesses",
@@ -69,7 +97,7 @@ export default function AmanatPage() {
     if (!firestore || !user) {
         toast({
             title: "Error",
-            description: "You must be logged in to record an Amanat.",
+            description: "You must be logged in to manage Amanat records.",
             variant: "destructive",
         });
         return;
@@ -78,32 +106,54 @@ export default function AmanatPage() {
     const amanatData: any = {
       ...data,
       userId: user.uid,
-      createdAt: serverTimestamp(),
       returnDate: format(data.returnDate, "PPP"),
     };
 
     if (!data.addWitnesses) {
       delete amanatData.witnesses;
     }
-    
-    const collectionPath = `users/${user.uid}/amanats`;
-    const collectionRef = collection(firestore, collectionPath);
-    
-    addDoc(collectionRef, amanatData)
-    .then(() => {
-        toast({
-            title: "Amanat Recorded",
-            description: "The entrusted item has been successfully recorded in the database.",
-        });
-        form.reset();
-    })
-    .catch(async (error) => {
-        errorEmitter.emit("permission-error", new FirestorePermissionError({
-            path: collectionRef.path,
-            operation: "create",
-            requestResourceData: amanatData,
-        }));
-    });
+
+    if (amanatId) {
+      // Update existing record
+      const docRef = doc(firestore, `users/${user.uid}/amanats`, amanatId);
+      updateDoc(docRef, amanatData)
+      .then(() => {
+          toast({
+              title: "Amanat Updated",
+              description: "The entrusted item has been successfully updated.",
+          });
+          router.push('/dashboard');
+      })
+      .catch(async (error) => {
+          errorEmitter.emit("permission-error", new FirestorePermissionError({
+              path: docRef.path,
+              operation: "update",
+              requestResourceData: amanatData,
+          }));
+      });
+
+    } else {
+      // Create new record
+      amanatData.createdAt = serverTimestamp();
+      const collectionPath = `users/${user.uid}/amanats`;
+      const collectionRef = collection(firestore, collectionPath);
+      
+      addDoc(collectionRef, amanatData)
+      .then(() => {
+          toast({
+              title: "Amanat Recorded",
+              description: "The entrusted item has been successfully recorded.",
+          });
+          form.reset();
+      })
+      .catch(async (error) => {
+          errorEmitter.emit("permission-error", new FirestorePermissionError({
+              path: collectionRef.path,
+              operation: "create",
+              requestResourceData: amanatData,
+          }));
+      });
+    }
   }
 
   return (
@@ -112,15 +162,20 @@ export default function AmanatPage() {
         <h1 className="text-3xl font-bold font-headline tracking-tight flex items-center gap-2 text-primary">
           <HeartHandshake /> Amanat (Entrusted Items) Management
         </h1>
-        <p className="text-muted-foreground">Keep track of items you have entrusted to others.</p>
+        <p className="text-muted-foreground">{amanatId ? "Edit your entrusted item record." : "Keep track of items you have entrusted to others."}</p>
       </header>
 
       <Card className="border-2">
         <CardHeader>
-          <CardTitle className="text-primary">Record a New Entrusted Item</CardTitle>
-          <CardDescription>Fill in the details below to add a new Amanat record.</CardDescription>
+          <CardTitle className="text-primary">{amanatId ? "Edit Entrusted Item" : "Record a New Entrusted Item"}</CardTitle>
+          <CardDescription>Fill in the details below to {amanatId ? "update this" : "add a new"} Amanat record.</CardDescription>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
@@ -196,7 +251,7 @@ export default function AmanatPage() {
                                 mode="single"
                                 selected={field.value}
                                 onSelect={field.onChange}
-                                disabled={(date) => date < new Date()}
+                                disabled={(date) => date < new Date() && !amanatId}
                                 initialFocus
                               />
                             </PopoverContent>
@@ -302,16 +357,14 @@ export default function AmanatPage() {
 
               <div className="flex justify-end">
                 <Button type="submit">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Amanat Record
+                  {amanatId ? <><Save className="mr-2 h-4 w-4" /> Save Changes</> : <><PlusCircle className="mr-2 h-4 w-4" /> Add Amanat Record</>}
                 </Button>
               </div>
             </form>
           </Form>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    

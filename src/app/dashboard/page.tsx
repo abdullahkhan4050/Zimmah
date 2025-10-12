@@ -5,6 +5,7 @@ import {
   FileText,
   BookOpen,
   HeartHandshake,
+  Edit,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -19,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -30,17 +32,19 @@ import { useEffect, useState } from "react";
 import { collection, orderBy, query, where } from "firebase/firestore";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 
 type Wasiyat = { id: string; will: string; type: string; createdAt: any };
 type Qarz = { id: string; debtor: string; creditor: string; amount: number; dueDate: string };
-type Amanat = { id: string; item: string; entrustee: string; returnDate: string };
+type Amanat = { id: string; item: string; description: string; entrustee: string; returnDate: string };
 
 
 export default function DashboardPage() {
     const { user } = useUser();
     const userName = user?.displayName || "User";
     const firestore = useFirestore();
+    const router = useRouter();
 
     const wasiyatQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -139,7 +143,10 @@ export default function DashboardPage() {
                                                     {item.will}
                                                 </div>
                                             <AlertDialogFooter>
-                                                <AlertDialogAction>Close</AlertDialogAction>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => router.push('/dashboard/wasiyat')}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                                </AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -181,7 +188,10 @@ export default function DashboardPage() {
                                                 <p><strong>Due Date:</strong> {item.dueDate}</p>
                                             </div>
                                             <AlertDialogFooter>
-                                                <AlertDialogAction>Close</AlertDialogAction>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => router.push(`/dashboard/qarz?id=${item.id}`)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                                </AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -217,11 +227,15 @@ export default function DashboardPage() {
                                             </AlertDialogHeader>
                                              <div className="text-sm">
                                                 <p><strong>Item:</strong> {item.item}</p>
+                                                <p><strong>Description:</strong> {item.description}</p>
                                                 <p><strong>Entrustee:</strong> {item.entrustee}</p>
                                                 <p><strong>Return Date:</strong> {item.returnDate}</p>
                                             </div>
                                             <AlertDialogFooter>
-                                                <AlertDialogAction>Close</AlertDialogAction>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => router.push(`/dashboard/amanat?id=${item.id}`)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                                </AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -241,5 +255,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
