@@ -4,7 +4,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { collection, doc, setDoc, query, where, getDocs } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { updateProfile } from "firebase/auth";
 
@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useDoc, useFirestore, useAuth } from "@/firebase";
+import { useDoc, useFirestore, useAuth, useUser } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -31,7 +31,7 @@ type ProfileData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
     const { toast } = useToast();
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading } = useUser();
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const firestore = useFirestore();
@@ -53,35 +53,30 @@ export default function ProfilePage() {
         return doc(firestore, 'users', user.uid);
     }, [firestore, user]);
 
-    const { data: profileData, loading: profileLoading } = useDoc<ProfileData>(profileDocRef, {
-        onSuccess: (data) => {
-            if (data) {
-                form.reset({
-                    ...data,
-                    email: user?.email || data.email, // Prioritize auth email
-                });
-                if (data.avatar) {
-                    setAvatarPreview(data.avatar);
-                } else if (user?.photoURL) {
-                    setAvatarPreview(user.photoURL);
-                }
-            } else if (user) {
-                form.reset({
-                    fullName: user.displayName || "",
-                    email: user.email || "",
-                });
-                if(user.photoURL) {
-                    setAvatarPreview(user.photoURL)
-                }
+    const { data: profileData, isLoading: profileLoading } = useDoc<ProfileData>(profileDocRef);
+    
+    useEffect(() => {
+        if (profileData) {
+            form.reset({
+                ...profileData,
+                email: user?.email || profileData.email, // Prioritize auth email
+            });
+            if (profileData.avatar) {
+                setAvatarPreview(profileData.avatar);
+            } else if (user?.photoURL) {
+                setAvatarPreview(user.photoURL);
+            }
+        } else if (user) {
+            form.reset({
+                fullName: user.displayName || "",
+                email: user.email || "",
+                phone: user.phoneNumber || "",
+            });
+            if(user.photoURL) {
+                setAvatarPreview(user.photoURL)
             }
         }
-    });
-
-    useEffect(() => {
-        if (user && !form.getValues('email')) {
-            form.setValue('email', user.email || '');
-        }
-    }, [user, form]);
+    }, [profileData, user, form]);
 
     const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -106,7 +101,17 @@ export default function ProfilePage() {
             return;
         }
 
-        const profileUpdatePromise = updateProfile(user, {
+        const authUser = auth.currentUser;
+        if (!authUser) {
+             toast({
+                title: "Error",
+                description: "Authentication session expired. Please log in again.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const profileUpdatePromise = updateProfile(authUser, {
             displayName: values.fullName,
             photoURL: values.avatar,
         });
