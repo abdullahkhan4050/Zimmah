@@ -27,10 +27,16 @@ type Message = {
   text: string;
 }
 
+const initialBotMessage: Message = {
+    role: 'bot',
+    text: "Hello! I'm the Zimmah AI assistant. How can I help you today with Wasiyat (Wills), Qarz (Debts), or Amanat (Trusts)?"
+};
+
+
 export default function ChatbotPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([initialBotMessage]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
 
@@ -77,7 +83,7 @@ export default function ChatbotPage() {
         <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight flex items-center gap-2 text-primary">
           <Bot /> AI Chatbot
         </h1>
-        <p className="text-muted-foreground">Ask me anything! I'm here to help.</p>
+        <p className="text-muted-foreground">Your friendly Shariah-compliant assistant.</p>
       </header>
       
       <Card className="flex-1 flex flex-col border-2">
@@ -144,4 +150,3 @@ export default function ChatbotPage() {
     </div>
   );
 }
-
