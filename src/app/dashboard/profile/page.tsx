@@ -7,6 +7,7 @@ import * as z from "zod";
 import { doc, setDoc } from "firebase/firestore";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { updateProfile } from "firebase/auth";
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,9 +34,12 @@ export default function ProfilePage() {
     const { toast } = useToast();
     const { user, loading: authLoading } = useUser();
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const firestore = useFirestore();
     const auth = useAuth();
+    const storage = useMemo(() => getStorage(), []);
+
 
     const form = useForm<ProfileData>({
         resolver: zodResolver(profileSchema),
@@ -59,7 +63,7 @@ export default function ProfilePage() {
         if (profileData) {
             form.reset({
                 ...profileData,
-                email: user?.email || profileData.email, // Prioritize auth email
+                email: user?.email || profileData.email,
                 phone: profileData.phone || "",
                 address: profileData.address || ""
             });
@@ -88,7 +92,7 @@ export default function ProfilePage() {
             reader.onloadend = () => {
                 const result = reader.result as string;
                 setAvatarPreview(result);
-                form.setValue("avatar", result);
+                form.setValue("avatar", result, { shouldDirty: true });
             };
             reader.readAsDataURL(file);
         }
@@ -114,13 +118,39 @@ export default function ProfilePage() {
             return;
         }
 
+        form.formState.isSubmitting = true;
+        
+        let finalAvatarUrl = values.avatar;
+
+        // Check if the avatar value is a new data URI, meaning a new file was selected
+        if (values.avatar && values.avatar.startsWith('data:image')) {
+            setIsUploading(true);
+            try {
+                const imageRef = storageRef(storage, `avatars/${user.uid}`);
+                // Upload the base64 string
+                const snapshot = await uploadString(imageRef, values.avatar, 'data_url');
+                finalAvatarUrl = await getDownloadURL(snapshot.ref);
+                toast({ title: "Avatar Uploaded", description: "Your new photo has been uploaded." });
+            } catch (error) {
+                console.error("Error uploading avatar:", error);
+                toast({ title: "Upload Failed", description: "Could not upload your new photo.", variant: "destructive" });
+                setIsUploading(false);
+                form.formState.isSubmitting = false;
+                return;
+            } finally {
+                setIsUploading(false);
+            }
+        }
+
+
         const profileUpdatePromise = updateProfile(authUser, {
             displayName: values.fullName,
-            photoURL: values.avatar,
+            photoURL: finalAvatarUrl,
         });
 
         const firestoreUpdatePromise = setDoc(profileDocRef, {
             ...values,
+            avatar: finalAvatarUrl, // Save the public URL, not the data URI
             email: user.email, // ensure email is not changed
         }, { merge: true })
         .catch(async (error) => {
@@ -139,6 +169,8 @@ export default function ProfilePage() {
                 title: "Profile Updated",
                 description: "Your personal information has been saved.",
             });
+            form.reset(values, { keepDirty: false });
+
         })
         .catch((error) => {
             console.error("Failed to update profile:", error);
@@ -149,6 +181,8 @@ export default function ProfilePage() {
                     variant: "destructive",
                 });
             }
+        }).finally(() => {
+            form.formState.isSubmitting = false;
         });
     }
     
@@ -190,7 +224,7 @@ export default function ProfilePage() {
                                 className="hidden"
                                 accept="image/*"
                             />
-                            <Button size="sm" variant="outline" className="w-fit mt-2" onClick={() => fileInputRef.current?.click()}>
+                            <Button size="sm" variant="outline" className="w-fit mt-2" onClick={() => fileInput.current?.click()}>
                                 <Upload className="mr-2 h-4 w-4" /> Change Photo
                             </Button>
                         </div>
@@ -231,7 +265,7 @@ export default function ProfilePage() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Phone</FormLabel>
-                                            <FormControl><Input {...field} /></FormControl>
+                                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -242,7 +276,7 @@ export default function ProfilePage() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Address</FormLabel>
-                                            <FormControl><Input {...field} /></FormControl>
+                                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -250,8 +284,8 @@ export default function ProfilePage() {
                             </div>
                             
                             <div className="flex justify-end">
-                                <Button type="submit" disabled={form.formState.isSubmitting}>
-                                    {form.formState.isSubmitting ? (
+                                <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
+                                    {form.formState.isSubmitting || isUploading ? (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
                                         <Save className="mr-2 h-4 w-4" />
