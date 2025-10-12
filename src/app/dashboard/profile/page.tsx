@@ -118,8 +118,6 @@ export default function ProfilePage() {
             return;
         }
 
-        form.formState.isSubmitting = true;
-        
         let finalAvatarUrl = values.avatar;
 
         // Check if the avatar value is a new data URI, meaning a new file was selected
@@ -135,7 +133,6 @@ export default function ProfilePage() {
                 console.error("Error uploading avatar:", error);
                 toast({ title: "Upload Failed", description: "Could not upload your new photo.", variant: "destructive" });
                 setIsUploading(false);
-                form.formState.isSubmitting = false;
                 return;
             } finally {
                 setIsUploading(false);
@@ -181,8 +178,6 @@ export default function ProfilePage() {
                     variant: "destructive",
                 });
             }
-        }).finally(() => {
-            form.formState.isSubmitting = false;
         });
     }
     
@@ -300,5 +295,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-
-    
