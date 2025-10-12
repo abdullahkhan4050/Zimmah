@@ -213,10 +213,13 @@ export default function DashboardPage() {
                                                 <p><strong>Debtor:</strong> {item.debtor}</p>
                                                 <p><strong>Creditor:</strong> {item.creditor}</p>
                                                 <p><strong>Due Date:</strong> {item.dueDate}</p>
-                                                <p><strong>Status:</strong> <Badge className={cn(
-                                                    item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary',
-                                                    'text-white'
-                                                )}>{item.status}</Badge></p>
+                                                <div className="flex items-center gap-2">
+                                                  <strong>Status:</strong>
+                                                  <Badge className={cn(
+                                                      item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary',
+                                                      'text-white'
+                                                  )}>{item.status}</Badge>
+                                                </div>
                                             </div>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -267,10 +270,13 @@ export default function DashboardPage() {
                                                 <p><strong>Description:</strong> {item.description}</p>
                                                 <p><strong>Entrustee:</strong> {item.entrustee}</p>
                                                 <p><strong>Return Date:</strong> {item.returnDate}</p>
-                                                <p><strong>Status:</strong> <Badge className={cn(
-                                                    item.status === 'Entrusted' ? 'bg-orange-500' : 'bg-primary',
-                                                    'text-white'
-                                                )}>{item.status}</Badge></p>
+                                                <div className="flex items-center gap-2">
+                                                  <strong>Status:</strong>
+                                                  <Badge className={cn(
+                                                      item.status === 'Entrusted' ? 'bg-orange-500' : 'bg-primary',
+                                                      'text-white'
+                                                  )}>{item.status}</Badge>
+                                                </div>
                                             </div>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
