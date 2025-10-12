@@ -12,12 +12,13 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { generateWillAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { useFirestore, useUser, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
+import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -35,7 +36,13 @@ const manualWasiyatSchema = z.object({
     manualWill: z.string().min(1, "Will content cannot be empty."),
 });
 
-type WriteMode = "ai" | "manual" | null;
+const newWitnessSchema = z.object({
+  name: z.string().min(2, "Witness name is required."),
+  cnic: z.string().regex(/^\d{5}-\d{7}-\d{1}$/, "Invalid CNIC format (e.g., 12345-1234567-1)"),
+  phone: z.string().min(10, "Phone number is required"),
+  email: z.string().email("Invalid email.").optional().or(z.literal("")),
+});
+
 type Witness = { id: string; name: string; cnic: string };
 type WasiyatDoc = { id: string; will: string; type: string; createdAt: any; };
 
@@ -55,6 +62,7 @@ export default function WasiyatPage() {
   const searchParams = useSearchParams();
   const wasiyatId = searchParams.get('id');
   const [isLoading, setIsLoading] = useState(false);
+  const [showNewWitnessForm, setShowNewWitnessForm] = useState(false);
 
   const wasiyatQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || wasiyatId) return null; // Don't run this if we are editing a specific will by ID
@@ -95,10 +103,10 @@ export default function WasiyatPage() {
 
   const witnessesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, `users/${user?.uid}/witnesses`));
+    return query(collection(firestore, `users/${user.uid}/witnesses`));
   }, [firestore, user?.uid]);
 
-  const { data: witnesses, loading: witnessesLoading } = useCollection<Witness>(witnessesQuery);
+  const { data: witnesses, loading: witnessesLoading, error: witnessesError } = useCollection<Witness>(witnessesQuery);
 
   const aiForm = useForm<z.infer<typeof wasiyatSchema>>({
     resolver: zodResolver(wasiyatSchema),
@@ -106,6 +114,17 @@ export default function WasiyatPage() {
         prompt: ""
     }
   });
+
+  const newWitnessForm = useForm<z.infer<typeof newWitnessSchema>>({
+    resolver: zodResolver(newWitnessSchema),
+    defaultValues: {
+      name: "",
+      cnic: "",
+      phone: "",
+      email: "",
+    },
+  });
+
 
   const handlePrint = () => {
     window.print();
@@ -265,6 +284,30 @@ export default function WasiyatPage() {
       description: "The selected witnesses have been added to your will draft. You can now save the changes."
     });
   };
+
+  async function onAddNewWitness(data: z.infer<typeof newWitnessSchema>) {
+     if (!firestore || !user) {
+        toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
+        return;
+    }
+    const witnessData = { ...data, userId: user.uid, createdAt: serverTimestamp() };
+    const collectionPath = `users/${user.uid}/witnesses`;
+    const collectionRef = collection(firestore, collectionPath);
+    
+    addDoc(collectionRef, witnessData)
+    .then(() => {
+        toast({ title: "Witness Added", description: "The new witness has been saved." });
+        newWitnessForm.reset();
+        setShowNewWitnessForm(false);
+    })
+    .catch((error) => {
+        errorEmitter.emit("permission-error", new FirestorePermissionError({
+            path: collectionPath,
+            operation: "create",
+            requestResourceData: witnessData,
+        }));
+    });
+  }
 
 
   const renderContent = () => {
@@ -441,7 +484,7 @@ export default function WasiyatPage() {
                     
                     {!isLoading && isPending && <div className="text-center p-8 m-auto">Generating your will draft... <Sparkles className="inline-block animate-pulse" /></div>}
                     
-                    {!isLoading && !isPending && !willDraft && !isEditing && (
+                    {!isLoading && !willDraft && !isEditing && (
                         <div className="m-auto text-center p-8 text-muted-foreground print:hidden">
                            <p>Choose an option to start creating your will, or edit an existing one.</p>
                         </div>
@@ -482,46 +525,74 @@ export default function WasiyatPage() {
                                             )}
                                         </>
                                     )}
-                                     <Dialog>
+                                     <Dialog onOpenChange={() => setShowNewWitnessForm(false)}>
                                         <DialogTrigger asChild>
                                             <Button variant="outline"><UserCheck className="mr-2 h-4 w-4" /> Assign Witnesses</Button>
                                         </DialogTrigger>
-                                        <DialogContent>
+                                        <DialogContent className="sm:max-w-[425px]">
                                             <DialogHeader>
                                                 <DialogTitle>Assign Witnesses</DialogTitle>
                                                 <DialogDescription>
-                                                    Select from your list of saved witnesses to add them to this will.
+                                                    Select from your list of saved witnesses or add a new one.
                                                 </DialogDescription>
                                             </DialogHeader>
-                                            <ScrollArea className="max-h-64">
-                                                <div className="space-y-2 p-1">
-                                                    {witnessesLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                                                    {!witnessesLoading && witnesses?.map(witness => (
-                                                        <div key={witness.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
-                                                            <Checkbox
-                                                                id={`witness-${witness.id}`}
-                                                                onCheckedChange={() => handleWitnessSelect(witness)}
-                                                                checked={selectedWitnesses.some(w => w.id === witness.id)}
-                                                            />
-                                                            <label
-                                                                htmlFor={`witness-${witness.id}`}
-                                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
-                                                            >
-                                                                {witness.name} ({witness.cnic})
-                                                            </label>
+                                            
+                                            {!showNewWitnessForm ? (
+                                                <>
+                                                    <ScrollArea className="max-h-64">
+                                                        <div className="space-y-2 p-1">
+                                                            {witnessesLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                                                            {witnessesError && <p className="text-destructive text-center">Could not load witnesses.</p>}
+                                                            {!witnessesLoading && witnesses?.map(witness => (
+                                                                <div key={witness.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                                                    <Checkbox
+                                                                        id={`witness-${witness.id}`}
+                                                                        onCheckedChange={() => handleWitnessSelect(witness)}
+                                                                        checked={selectedWitnesses.some(w => w.id === witness.id)}
+                                                                    />
+                                                                    <label
+                                                                        htmlFor={`witness-${witness.id}`}
+                                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                                                                    >
+                                                                        {witness.name} ({witness.cnic})
+                                                                    </label>
+                                                                </div>
+                                                            ))}
+                                                            {!witnessesLoading && witnesses?.length === 0 && (
+                                                                <p className="text-center text-muted-foreground p-4">No saved witnesses found.</p>
+                                                            )}
                                                         </div>
-                                                    ))}
-                                                     {!witnessesLoading && witnesses?.length === 0 && (
-                                                        <p className="text-center text-muted-foreground p-4">No witnesses found. Please add witnesses from the "Witnesses" page first.</p>
-                                                     )}
-                                                </div>
-                                            </ScrollArea>
+                                                    </ScrollArea>
+                                                     <Button variant="secondary" onClick={() => setShowNewWitnessForm(true)}>
+                                                        <PlusCircle className="mr-2 h-4 w-4" /> Add New Witness
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                 <Form {...newWitnessForm}>
+                                                    <form onSubmit={newWitnessForm.handleSubmit(onAddNewWitness)} className="space-y-4">
+                                                        <FormField control={newWitnessForm.control} name="name" render={({ field }) => (
+                                                            <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                        )}/>
+                                                        <FormField control={newWitnessForm.control} name="cnic" render={({ field }) => (
+                                                             <FormItem><FormLabel>CNIC</FormLabel><FormControl><Input placeholder="12345-1234567-1" {...field} /></FormControl><FormMessage /></FormItem>
+                                                        )}/>
+                                                         <FormField control={newWitnessForm.control} name="phone" render={({ field }) => (
+                                                             <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                                        )}/>
+                                                        <div className="flex justify-end gap-2">
+                                                          <Button type="button" variant="ghost" onClick={() => setShowNewWitnessForm(false)}>Cancel</Button>
+                                                          <Button type="submit">Save Witness</Button>
+                                                        </div>
+                                                    </form>
+                                                </Form>
+                                            )}
+                                            
                                             <DialogFooter>
                                                 <DialogClose asChild>
                                                     <Button variant="outline">Cancel</Button>
                                                 </DialogClose>
                                                 <DialogClose asChild>
-                                                    <Button onClick={handleAssignWitnesses}>Assign Selected</Button>
+                                                    <Button onClick={handleAssignWitnesses} disabled={showNewWitnessForm}>Assign Selected</Button>
                                                 </DialogClose>
                                             </DialogFooter>
                                         </DialogContent>
