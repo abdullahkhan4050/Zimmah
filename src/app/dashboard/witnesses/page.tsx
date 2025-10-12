@@ -31,7 +31,8 @@ type Witness = z.infer<typeof witnessSchema> & { id: string };
 export default function WitnessesPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useAuth();
+  const auth = useAuth();
+  const { user: authUser } = useAuth(); // Use the hook for display/querying
   
   const form = useForm<z.infer<typeof witnessSchema>>({
     resolver: zodResolver(witnessSchema),
@@ -44,14 +45,16 @@ export default function WitnessesPage() {
   });
 
   const witnessesQuery = useMemo(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `users/${user.uid}/witnesses`);
-  }, [firestore, user]);
+    if (!firestore || !authUser) return null;
+    return collection(firestore, `users/${authUser.uid}/witnesses`);
+  }, [firestore, authUser]);
 
   const { data: witnesses, loading } = useCollection<Witness>(witnessesQuery);
 
   async function onSubmit(data: z.infer<typeof witnessSchema>) {
-    if (!firestore || !user) {
+    const currentUser = auth?.currentUser;
+
+    if (!firestore || !currentUser) {
         toast({
             title: "Error",
             description: "You must be logged in to add a witness.",
@@ -62,10 +65,11 @@ export default function WitnessesPage() {
 
     const witnessData = {
       ...data,
+      userId: currentUser.uid,
       createdAt: serverTimestamp(),
     };
     
-    const collectionRef = collection(firestore, `users/${user.uid}/witnesses`);
+    const collectionRef = collection(firestore, `users/${currentUser.uid}/witnesses`);
     
     addDoc(collectionRef, witnessData)
     .then(() => {
