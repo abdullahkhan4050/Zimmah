@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useMemo } from "react";
 import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangle, Edit, Save } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,9 +16,14 @@ import { useToast } from "@/hooks/use-toast";
 import { generateWillAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { useFirestore } from "@/firebase";
+import { useFirestore, useUser, useCollection } from "@/firebase";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 const wasiyatSchema = z.object({
   prompt: z.string().min(50, "Please provide a detailed description of your wishes (at least 50 characters)."),
@@ -29,6 +34,7 @@ const manualWasiyatSchema = z.object({
 });
 
 type WriteMode = "ai" | "manual" | null;
+type Witness = { id: string; name: string; cnic: string };
 
 export default function WasiyatPage() {
   const { toast } = useToast();
@@ -38,9 +44,17 @@ export default function WasiyatPage() {
   const [manualWill, setManualWill] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editedWill, setEditedWill] = useState("");
+  const [selectedWitnesses, setSelectedWitnesses] = useState<Witness[]>([]);
   const firestore = useFirestore();
+  const { user } = useUser();
   const draftContainerRef = useRef<HTMLDivElement>(null);
 
+  const witnessesQuery = useMemo(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, "witnesses"), where("userId", "==", user.uid));
+  }, [firestore, user]);
+
+  const { data: witnesses, loading: witnessesLoading } = useCollection<Witness>(witnessesQuery);
 
   const aiForm = useForm<z.infer<typeof wasiyatSchema>>({
     resolver: zodResolver(wasiyatSchema),
@@ -80,10 +94,10 @@ export default function WasiyatPage() {
   }
 
   async function handleManualSave() {
-    if (!manualWill || !firestore) {
+    if (!manualWill || !firestore || !user) {
       toast({
         title: "Error",
-        description: "Will content cannot be empty.",
+        description: !user ? "You must be logged in to save." : "Will content cannot be empty.",
         variant: "destructive",
       });
       return;
@@ -91,6 +105,7 @@ export default function WasiyatPage() {
     const wasiyatData = {
       will: manualWill,
       type: 'manual',
+      userId: user.uid,
       createdAt: serverTimestamp(),
     };
 
@@ -124,6 +139,40 @@ export default function WasiyatPage() {
         description: "Your edits to the will draft have been saved.",
     });
   };
+
+  const handleWitnessSelect = (witness: Witness) => {
+    setSelectedWitnesses(prev => 
+      prev.some(w => w.id === witness.id)
+        ? prev.filter(w => w.id !== witness.id)
+        : [...prev, witness]
+    );
+  };
+  
+  const handleAssignWitnesses = () => {
+    if (selectedWitnesses.length === 0) {
+      toast({
+        title: "No Witnesses Selected",
+        description: "Please select at least one witness.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const witnessSection = `\n\n**WITNESSES**\n\n${selectedWitnesses
+      .map((w, i) => 
+        `WITNESS ${i + 1}:\nName: ${w.name}\nCNIC: ${w.cnic}\nSignature: _________________________`
+      )
+      .join("\n\n")}`;
+    
+    const newWillDraft = (willDraft || "") + witnessSection;
+    setWillDraft(newWillDraft);
+    setEditedWill(newWillDraft);
+    toast({
+      title: "Witnesses Assigned",
+      description: "The selected witnesses have been added to your will draft."
+    });
+  };
+
 
   return (
     <div className="flex flex-col gap-6" id="wasiyat-page">
@@ -274,7 +323,50 @@ export default function WasiyatPage() {
                                     ) : (
                                         <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
                                     )}
-                                    <Button variant="outline"><UserCheck className="mr-2 h-4 w-4" /> Assign Witnesses</Button>
+                                     <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline"><UserCheck className="mr-2 h-4 w-4" /> Assign Witnesses</Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Assign Witnesses</DialogTitle>
+                                                <DialogDescription>
+                                                    Select from your list of saved witnesses to add them to this will.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <ScrollArea className="max-h-64">
+                                                <div className="space-y-2 p-1">
+                                                    {witnessesLoading && Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                                                    {!witnessesLoading && witnesses?.map(witness => (
+                                                        <div key={witness.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                                            <Checkbox
+                                                                id={`witness-${witness.id}`}
+                                                                onCheckedChange={() => handleWitnessSelect(witness)}
+                                                                checked={selectedWitnesses.some(w => w.id === witness.id)}
+                                                            />
+                                                            <label
+                                                                htmlFor={`witness-${witness.id}`}
+                                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                                                            >
+                                                                {witness.name} ({witness.cnic})
+                                                            </label>
+                                                        </div>
+                                                    ))}
+                                                     {!witnessesLoading && witnesses?.length === 0 && (
+                                                        <p className="text-center text-muted-foreground p-4">No witnesses found. Please add witnesses from the "Witnesses" page first.</p>
+                                                     )}
+                                                </div>
+                                            </ScrollArea>
+                                            <DialogFooter>
+                                                <DialogClose asChild>
+                                                    <Button variant="outline">Cancel</Button>
+                                                </DialogClose>
+                                                <DialogClose asChild>
+                                                    <Button onClick={handleAssignWitnesses}>Assign Selected</Button>
+                                                </DialogClose>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
                                     <Button variant="outline"><Share2 className="mr-2 h-4 w-4" /> Send for Scholar Review</Button>
                                 </div>
                                  <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print / Save as PDF</Button>
