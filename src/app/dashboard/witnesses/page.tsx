@@ -94,131 +94,129 @@ export default function WitnessesPage() {
         <p className="text-muted-foreground">Add and manage your trusted witnesses.</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle className="text-primary">Add a New Witness</CardTitle>
-              <CardDescription>Fill in the details to add a new witness.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Junaid Ahmed" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="cnic"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>CNIC</FormLabel>
-                          <FormControl>
-                            <Input placeholder="42201-1234567-1" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone</FormLabel>
-                          <FormControl>
-                            <Input placeholder="+92 300 1234567" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="witness@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  <Button type="submit" className="w-full">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Witness
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-2">
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle className="text-primary">Your Witnesses</CardTitle>
-              <CardDescription>A list of all your recorded witnesses.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead className="hidden md:table-cell">Email</TableHead>
-                    <TableHead className="hidden lg:table-cell">CNIC</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading &&
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={i}>
-                        <TableCell>
-                          <Skeleton className="h-4 w-24" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-4 w-28" />
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <Skeleton className="h-4 w-32" />
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          <Skeleton className="h-4 w-36" />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  {!loading && witnesses?.map((witness) => (
-                    <TableRow key={witness.id}>
-                      <TableCell className="font-medium">{witness.name}</TableCell>
-                      <TableCell>{witness.phone}</TableCell>
-                      <TableCell className="hidden md:table-cell">{witness.email}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{witness.cnic}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {!loading && witnesses?.length === 0 && (
-                <div className="text-center p-8 text-muted-foreground">
-                  You haven't added any witnesses yet.
+      <Card className="border-2">
+        <CardHeader>
+          <CardTitle className="text-primary">Add a New Witness</CardTitle>
+          <CardDescription>Fill in the details to add a new witness.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Junaid Ahmed" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cnic"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CNIC</FormLabel>
+                        <FormControl>
+                          <Input placeholder="42201-1234567-1" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+92 300 1234567" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="witness@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              <Button type="submit" className="w-full md:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Witness
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-2">
+        <CardHeader>
+          <CardTitle className="text-primary">Your Witnesses</CardTitle>
+          <CardDescription>A list of all your recorded witnesses.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>CNIC</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading &&
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-36" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              {!loading && witnesses?.map((witness) => (
+                <TableRow key={witness.id}>
+                  <TableCell className="font-medium">{witness.name}</TableCell>
+                  <TableCell>{witness.phone}</TableCell>
+                  <TableCell>{witness.email}</TableCell>
+                  <TableCell>{witness.cnic}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {!loading && witnesses?.length === 0 && (
+            <div className="text-center p-8 text-muted-foreground">
+              You haven't added any witnesses yet.
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
