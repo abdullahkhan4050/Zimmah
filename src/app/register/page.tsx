@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Info, ShieldCheck, Eye, EyeOff, Mail, KeyRound, Smartphone } from "lucide-react";
+import { Info, ShieldCheck, Eye, EyeOff, Mail, KeyRound, Smartphone, User as UserIcon, Calendar, Lock } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { setDoc, doc, collection, addDoc, serverTimestamp, getDocs, query, where, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -54,7 +54,6 @@ const detailsSchema = z.object({
     }),
     address1: z.string().min(5, "Address is required"),
     address2: z.string().optional(),
-    cnicFile: z.instanceof(File).optional(),
   });
 
 const passwordSchema = z.object({
@@ -181,19 +180,9 @@ export default function RegisterPage() {
                 displayName: userDetails.fullName,
             });
 
-            let cnicFileUrl = "";
-            if (userDetails.cnicFile) {
-                const storage = getStorage();
-                const storageRef = ref(storage, `users/${user.uid}/cnic.jpg`);
-                await uploadBytes(storageRef, userDetails.cnicFile);
-                cnicFileUrl = await getDownloadURL(storageRef);
-            }
-
-            const { cnicFile, ...detailsToSave } = userDetails;
             const userData = {
-                ...detailsToSave,
+                ...userDetails,
                 uid: user.uid,
-                cnicFileUrl: cnicFileUrl,
             };
 
             await setDoc(doc(firestore, "users", user.uid), userData);
@@ -216,8 +205,6 @@ export default function RegisterPage() {
             });
         }
     }
-    
-    const { register, ...rest } = detailsForm.register("cnicFile");
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4">
@@ -306,43 +293,17 @@ export default function RegisterPage() {
                             />
                              <FormField
                                 control={detailsForm.control}
-                                name="cnicFile"
+                                name="address1"
                                 render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>CNIC Upload (Optional)</FormLabel>
-                                    <FormControl>
-                                    <Input
-                                        type="file"
-                                        className="pt-2 text-sm"
-                                        accept="image/*"
-                                        {...register}
-                                        onChange={(event) => {
-                                        field.onChange(
-                                            event.target.files ? event.target.files[0] : null
-                                        );
-                                        }}
-                                    />
-                                    </FormControl>
-                                    <FormDescription>
-                                    Upload a scan of your CNIC.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
+                                    <FormItem>
+                                        <FormLabel>Address</FormLabel>
+                                        <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}
                             />
                         </div>
                         
-                        <FormField
-                            control={detailsForm.control}
-                            name="address1"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Address</FormLabel>
-                                    <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                         <Button type="submit" className="w-full">
                             <Mail className="mr-2 h-4 w-4" />
                             Send Verification Code
@@ -499,5 +460,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    
