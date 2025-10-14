@@ -242,7 +242,8 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com"
     ]
   },
   "firestore": {
@@ -347,3 +348,5 @@
     "reasoning": "The Firestore structure is designed to address the 'Missing or insufficient permissions' error by ensuring authorization independence and proper data segregation. The core principle is to avoid complex `get()` calls in security rules, which are often the root cause of such errors. To achieve this, we denormalize authorization data (e.g., roles, memberships) directly into the documents where it's needed. Furthermore, we segregate data based on access requirements, using path-based ownership for user-specific data and membership maps for collaborative scenarios.\n\nThe structure supports secure `list` operations (QAPs) by:\n\n1.  **Path-Based Ownership:** Utilizing paths like `/users/{userId}/qarzs/{qarzId}` ensures that listing qarzs within a specific user's scope is straightforward and secure, as the rules can directly check if `request.auth.uid == userId`.\n2.  **Segregation of Roles:** The roles of users are stored within their user document (`/users/{userId}`), allowing us to validate the `request.auth.uid` against the data stored.\n\nThis design promotes clarity, simplifies security rules, and enhances debuggability by making authorization logic explicit within the document structure, eliminating the need for complex rule logic."
   }
 }
+
+    
