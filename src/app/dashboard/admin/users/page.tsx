@@ -50,21 +50,22 @@ export default function UsersPage() {
 
         const userDocRef = doc(firestore, "users", userToDelete.id);
 
-        try {
-            await deleteDoc(userDocRef);
+        deleteDoc(userDocRef)
+        .then(() => {
             toast({
                 title: "User Deleted",
                 description: `User ${userToDelete.fullName} has been successfully deleted.`,
             });
-        } catch (error) {
-            console.error("Error deleting user:", error);
+        })
+        .catch(async (error) => {
             errorEmitter.emit("permission-error", new FirestorePermissionError({
                 path: userDocRef.path,
                 operation: "delete",
             }));
-        } finally {
+        })
+        .finally(() => {
             setUserToDelete(null);
-        }
+        });
     };
 
     return (
@@ -174,4 +175,3 @@ export default function UsersPage() {
       </>
     );
 }
-

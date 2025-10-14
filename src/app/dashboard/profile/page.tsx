@@ -123,7 +123,6 @@ export default function ProfilePage() {
         let finalAvatarUrl = values.avatar;
 
         try {
-            // Check if the avatar value is a new data URI, meaning a new file was selected
             if (values.avatar && values.avatar.startsWith('data:image')) {
                 const imageRef = storageRef(storage, `avatars/${user.uid}`);
                 const snapshot = await uploadString(imageRef, values.avatar, 'data_url');
@@ -136,23 +135,13 @@ export default function ProfilePage() {
                 avatar: finalAvatarUrl,
                 email: user.email,
             };
-
-            const profileUpdatePromise = updateProfile(authUser, {
+            
+            await updateProfile(authUser, {
                 displayName: values.fullName,
                 photoURL: finalAvatarUrl,
             });
 
-            const firestoreUpdatePromise = setDoc(profileDocRef, updatedValues, { merge: true })
-            .catch(async (error) => {
-                errorEmitter.emit("permission-error", new FirestorePermissionError({
-                    path: profileDocRef.path,
-                    operation: "update",
-                    requestResourceData: updatedValues,
-                }));
-                throw error; // re-throw to be caught by Promise.all
-            });
-
-            await Promise.all([profileUpdatePromise, firestoreUpdatePromise]);
+            await setDoc(profileDocRef, updatedValues, { merge: true });
 
             toast({
                 title: "Profile Updated",
@@ -161,14 +150,11 @@ export default function ProfilePage() {
             form.reset(updatedValues, { keepDirty: false });
 
         } catch (error) {
-            console.error("Failed to update profile:", error);
-            if (! (error instanceof FirestorePermissionError)) {
-                 toast({
-                    title: "Update Failed",
-                    description: (error as Error).message || "Could not update your profile.",
-                    variant: "destructive",
-                });
-            }
+             errorEmitter.emit("permission-error", new FirestorePermissionError({
+                path: profileDocRef.path,
+                operation: "update",
+                requestResourceData: values,
+            }));
         } finally {
             setIsSubmitting(false);
         }
@@ -288,6 +274,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-
-
-    

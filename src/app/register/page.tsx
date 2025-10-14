@@ -37,11 +37,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ZimmahLogo } from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from "@/firebase";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 
 const detailsSchema = z.object({
@@ -118,30 +119,30 @@ export default function RegisterPage() {
         
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        try {
-            const pendingUserData = {
-                email: values.email,
-                phone: values.phone,
-                otp: otp,
-                createdAt: serverTimestamp()
-            };
-            
-            await addDoc(collection(firestore, "pending_users"), pendingUserData);
+        const pendingUserData = {
+            email: values.email,
+            phone: values.phone,
+            otp: otp,
+            createdAt: serverTimestamp()
+        };
+        
+        const pendingUsersCollection = collection(firestore, "pending_users");
 
+        addDoc(pendingUsersCollection, pendingUserData)
+        .then(() => {
             setStep(2);
-
             toast({
                 title: "Verification Code Sent",
                 description: "Please check your phone for the 6-digit OTP.",
             });
-        } catch (error: any) {
-            console.error("Error creating pending user:", error);
-            toast({
-                title: "Error",
-                description: error.message || "Could not start the registration process. Please try again.",
-                variant: "destructive",
-            });
-        }
+        })
+        .catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: pendingUsersCollection.path,
+                operation: 'create',
+                requestResourceData: pendingUserData
+            }));
+        });
     }
 
     async function onPasswordSubmit(values: PasswordFormValues) {
@@ -184,8 +185,9 @@ export default function RegisterPage() {
                 ...userDetails,
                 uid: user.uid,
             };
-
-            await setDoc(doc(firestore, "users", user.uid), userData);
+            
+            const userDocRef = doc(firestore, "users", user.uid);
+            await setDoc(userDocRef, userData);
             
             // Cleanup pending user doc
             snapshot.forEach(async (docSnap) => {
@@ -210,7 +212,6 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4">
       <div className="w-full max-w-2xl space-y-6">
         <header className="flex flex-col items-center text-center">
-          <ZimmahLogo className="h-56 w-auto mb-4" />
           <h1 className="text-3xl md:text-4xl font-headline font-bold text-primary">
             Create Your Account
           </h1>
