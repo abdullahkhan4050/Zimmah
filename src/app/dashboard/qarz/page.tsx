@@ -43,8 +43,8 @@ const witnessSchema = z.object({
 });
 
 const qarzSchema = z.object({
-  debtor: z.string().min(2, "Debtor name must be at least 2 characters."),
-  creditor: z.string().min(2, "Creditor name is required."),
+  debtor: z.string().min(3, "Debtor name must be at least 3 characters."),
+  creditor: z.string().min(3, "Creditor name must be at least 3 characters."),
   amount: z.coerce.number().positive("Amount must be positive."),
   startDate: z.date({ required_error: "Start date is required." }),
   dueDate: z.date({ required_error: "Due date is required." }),
