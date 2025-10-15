@@ -20,7 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 
 const witnessSchema = z.object({
-  name: z.string().min(2, "Witness name is required."),
+  name: z.string().min(1, "Witness name is required.").min(2, "Full name must be at least 2 characters."),
   cnic: z.string().regex(/^\d{5}-\d{7}-\d{1}$/, "Invalid CNIC format (e.g., 12345-1234567-1)"),
   phone: z.string().min(10, "Phone number is required"),
   email: z.string().email("Invalid email.").optional().or(z.literal("")),
