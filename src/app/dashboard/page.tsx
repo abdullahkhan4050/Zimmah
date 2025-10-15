@@ -371,7 +371,7 @@ export default function DashboardPage() {
                                         <span className="text-muted-foreground text-xs">Due: {item.dueDate}</span>
                                     </div>
                                     <div className="flex flex-wrap justify-end gap-2 items-center w-full sm:w-auto">
-                                        <Badge className={cn(item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary', 'text-white')}>{item.status}</Badge>
+                                        <Badge className={cn(item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary text-primary-foreground')}>{item.status === 'Pending' ? 'Pending Payment' : 'Paid in Full'}</Badge>
                                         <DialogTrigger asChild>
                                             <Button size="sm" variant="outline" onClick={() => setSelectedRecord({...item, type: 'qarz' })}>
                                                 <Eye className="mr-2 h-4 w-4" />Details
@@ -402,7 +402,7 @@ export default function DashboardPage() {
                                         <span className="text-muted-foreground text-xs">Return: {item.returnDate}</span>
                                     </div>
                                     <div className="flex flex-wrap justify-end gap-2 items-center w-full sm:w-auto">
-                                        <Badge className={cn(item.status === 'Entrusted' ? 'bg-orange-500' : 'bg-primary', 'text-white')}>{item.status}</Badge>
+                                        <Badge className={cn(item.status === 'Entrusted' ? 'bg-orange-500 text-white' : 'bg-primary text-primary-foreground')}>{item.status}</Badge>
                                         <DialogTrigger asChild>
                                             <Button size="sm" variant="outline" onClick={() => setSelectedRecord({...item, type: 'amanat' })}>
                                                 <Eye className="mr-2 h-4 w-4" />Details
@@ -442,3 +442,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
