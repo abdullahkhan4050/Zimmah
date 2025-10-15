@@ -213,7 +213,7 @@ export default function DashboardPage() {
                         <>
                         <AlertDialog>
                              <AlertDialogTrigger asChild>
-                                <Button>
+                                <Button onClick={() => setRecordToUpdate({ path: `users/${user?.uid}/${selectedRecord.type}s/${selectedRecord.id}`, newStatus: newStatus })}>
                                     <CheckCircle className="mr-2 h-4 w-4" />Mark as {newStatus}
                                 </Button>
                              </AlertDialogTrigger>
@@ -226,7 +226,7 @@ export default function DashboardPage() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleStatusUpdate({path: `users/${user?.uid}/${selectedRecord.type}s/${selectedRecord.id}`, newStatus: newStatus})}>Confirm</AlertDialogAction>
+                                    <AlertDialogAction onClick={handleStatusUpdate}>Confirm</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                         </Button>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="destructive">
+                                <Button variant="destructive" onClick={() => setItemToDelete({ id: selectedRecord.id, path: `users/${user?.uid}/${selectedRecord.type}s/${selectedRecord.id}` })}>
                                     <Trash2 className="mr-2 h-4 w-4" />Delete
                                 </Button>
                             </AlertDialogTrigger>
@@ -248,7 +248,7 @@ export default function DashboardPage() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete({ id: selectedRecord.id, path: `users/${user?.uid}/${selectedRecord.type}s/${selectedRecord.id}` })}>Delete</AlertDialogAction>
+                                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -442,5 +442,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
