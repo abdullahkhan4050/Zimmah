@@ -8,6 +8,7 @@ import {
   Edit,
   Trash2,
   CheckCircle,
+  Eye
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -30,6 +31,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useState, useMemo } from "react";
 import { collection, orderBy, query, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
@@ -40,11 +50,14 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Separator } from "@/components/ui/separator";
 
 
 type Wasiyat = { id: string; will: string; type: string; createdAt: any };
-type Qarz = { id: string; debtor: string; creditor: string; amount: number; dueDate: string; status: 'Pending' | 'Paid' };
-type Amanat = { id: string; item: string; description: string; entrustee: string; returnDate: string; status: 'Entrusted' | 'Returned' };
+type Qarz = { id: string; debtor: string; creditor: string; amount: number; startDate: string; dueDate: string; status: 'Pending' | 'Paid'; witnesses: any[] };
+type Amanat = { id: string; item: string; description: string; entrustee: string; returnDate: string; status: 'Entrusted' | 'Returned'; witnesses: any[] };
+
+type SelectedRecord = (Qarz & { type: 'qarz' }) | (Amanat & { type: 'amanat' }) | null;
 
 
 export default function DashboardPage() {
@@ -54,6 +67,8 @@ export default function DashboardPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [itemToDelete, setItemToDelete] = useState<{ id: string; path: string } | null>(null);
+    const [recordToUpdate, setRecordToUpdate] = useState<{ path: string; newStatus: string } | null>(null);
+    const [selectedRecord, setSelectedRecord] = useState<SelectedRecord>(null);
 
 
     const wasiyatQuery = useMemoFirebase(() => {
@@ -95,16 +110,21 @@ export default function DashboardPage() {
 
     const loading = wasiyatLoading || qarzLoading || amanatLoading;
 
-    const handleStatusUpdate = async (path: string, newStatus: string) => {
-        if (!firestore) return;
+    const handleStatusUpdate = async () => {
+        if (!recordToUpdate || !firestore) return;
+        const { path, newStatus } = recordToUpdate;
         const docRef = doc(firestore, path);
         const updateData = { status: newStatus };
+        
         updateDoc(docRef, updateData)
         .then(() => {
             toast({
                 title: "Status Updated",
-                description: "Record status updated successfully ✅",
+                description: `Record marked as ${newStatus} ✅`,
             });
+             if (selectedRecord && selectedRecord.id === docRef.id) {
+                setSelectedRecord(prev => prev ? { ...prev, status: newStatus as any } : null);
+            }
         })
         .catch(error => {
              errorEmitter.emit("permission-error", new FirestorePermissionError({
@@ -112,6 +132,9 @@ export default function DashboardPage() {
                 operation: "update",
                 requestResourceData: updateData,
             }));
+        })
+        .finally(() => {
+            setRecordToUpdate(null);
         });
     };
 
@@ -119,12 +142,16 @@ export default function DashboardPage() {
         if (!itemToDelete || !firestore) return;
         const { path } = itemToDelete;
         const docRef = doc(firestore, path);
+        
         deleteDoc(docRef)
         .then(() => {
             toast({
                 title: "Record Deleted",
                 description: "The record has been successfully deleted.",
             });
+             if (selectedRecord && selectedRecord.id === docRef.id) {
+                setSelectedRecord(null);
+            }
         })
         .catch(error => {
             errorEmitter.emit("permission-error", new FirestorePermissionError({
@@ -136,6 +163,103 @@ export default function DashboardPage() {
             setItemToDelete(null);
         });
     };
+    
+    const renderRecordDetails = () => {
+        if (!selectedRecord) return null;
+        
+        const isQarz = selectedRecord.type === 'qarz';
+        const isPending = isQarz ? selectedRecord.status === 'Pending' : selectedRecord.status === 'Entrusted';
+        const newStatus = isQarz ? 'Paid' : 'Returned';
+
+        return (
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="text-primary">{isQarz ? 'Qarz (Debt) Details' : 'Amanat (Trust) Details'}</DialogTitle>
+                    <DialogDescription>
+                        Full details for the selected record.
+                    </DialogDescription>
+                </DialogHeader>
+                <Separator />
+                <div className="grid gap-2 text-sm">
+                    {isQarz ? (
+                        <>
+                        <div className="grid grid-cols-2"><strong>Debtor:</strong> <span>{selectedRecord.debtor}</span></div>
+                        <div className="grid grid-cols-2"><strong>Creditor:</strong> <span>{selectedRecord.creditor}</span></div>
+                        <div className="grid grid-cols-2"><strong>Amount:</strong> <span>{selectedRecord.amount}</span></div>
+                        <div className="grid grid-cols-2"><strong>Start Date:</strong> <span>{selectedRecord.startDate}</span></div>
+                        <div className="grid grid-cols-2"><strong>Due Date:</strong> <span>{selectedRecord.dueDate}</span></div>
+                        </>
+                    ) : (
+                         <>
+                        <div className="grid grid-cols-2"><strong>Item:</strong> <span>{selectedRecord.item}</span></div>
+                        <div className="grid grid-cols-2"><strong>Description:</strong> <span>{selectedRecord.description}</span></div>
+                        <div className="grid grid-cols-2"><strong>Entrustee:</strong> <span>{selectedRecord.entrustee}</span></div>
+                        <div className="grid grid-cols-2"><strong>Return Date:</strong> <span>{selectedRecord.returnDate}</span></div>
+                        </>
+                    )}
+                     <div className="grid grid-cols-2"><strong>Status:</strong> <Badge className={cn(isPending ? 'bg-orange-500' : 'bg-primary', 'text-white w-fit')}>{selectedRecord.status}</Badge></div>
+                      {selectedRecord.witnesses && selectedRecord.witnesses.length > 0 && (
+                        <div>
+                            <strong>Witnesses:</strong>
+                            <ul className="list-disc pl-5">
+                                {selectedRecord.witnesses.map(w => <li key={w.id}>{w.name}</li>)}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+                <Separator />
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                    {isPending ? (
+                        <>
+                        <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                                <Button>
+                                    <CheckCircle className="mr-2 h-4 w-4" />Mark as {newStatus}
+                                </Button>
+                             </AlertDialogTrigger>
+                             <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Do you really want to mark this record as {newStatus}? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleStatusUpdate({path: `users/${user?.uid}/${selectedRecord.type}s/${selectedRecord.id}`, newStatus: newStatus})}>Confirm</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        <Button variant="outline" onClick={() => router.push(`/dashboard/${selectedRecord.type}?id=${selectedRecord.id}`)}>
+                            <Edit className="mr-2 h-4 w-4" />Edit
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />Delete
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action will permanently delete this record.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete({ id: selectedRecord.id, path: `users/${user?.uid}/${selectedRecord.type}s/${selectedRecord.id}` })}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        </>
+                    ) : (
+                        <Button disabled><CheckCircle className="mr-2 h-4 w-4" />{selectedRecord.status}</Button>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+        )
+    }
 
   return (
     <>
@@ -174,6 +298,7 @@ export default function DashboardPage() {
                 </Link>
             </CardContent>
         </Card>
+        <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedRecord(null)}>
         <Card className="border-2 flex flex-col">
             <CardHeader>
                 <CardTitle className="text-primary">Your Digital Vault</CardTitle>
@@ -201,11 +326,11 @@ export default function DashboardPage() {
                                         <p>Will created via {item.type} mode</p>
                                         <p className="text-muted-foreground text-xs">{item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString() : ''}</p>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-wrap justify-end gap-2">
                                         <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/wasiyat?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>
-                                        <AlertDialog>
+                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button size="sm" variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                                <Button size="sm" variant="destructive" onClick={() => setItemToDelete({ id: item.id, path: `users/${user?.uid}/wasiyats/${item.id}` })}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
@@ -215,11 +340,8 @@ export default function DashboardPage() {
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => {
-                                                        setItemToDelete({ id: item.id, path: `users/${user?.uid}/wasiyats/${item.id}` });
-                                                        handleDelete();
-                                                    }}>Continue</AlertDialogAction>
+                                                    <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
@@ -243,39 +365,18 @@ export default function DashboardPage() {
                      ) : sortedQarz && sortedQarz.length > 0 ? (
                          <ul className="space-y-2 pt-4">
                             {sortedQarz.map((item) => (
-                                <li key={item.id} className="p-3 border rounded-lg flex justify-between items-center">
+                                <li key={item.id} className="p-3 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                     <div className="flex flex-col">
                                         <span>Debt of {item.amount} from {item.debtor} to {item.creditor}</span>
                                         <span className="text-muted-foreground text-xs">Due: {item.dueDate}</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap justify-end gap-2 items-center w-full sm:w-auto">
                                         <Badge className={cn(item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary', 'text-white')}>{item.status}</Badge>
-                                        {item.status === 'Pending' ? (
-                                            <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(`users/${user?.uid}/qarzs/${item.id}`, 'Paid')}><CheckCircle className="mr-2 h-4 w-4" />Mark as Paid</Button>
-                                        ) : (
-                                            <Button size="sm" disabled><CheckCircle className="mr-2 h-4 w-4" />Paid</Button>
-                                        )}
-                                        {item.status === 'Pending' && <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/qarz?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>}
-                                        <AlertDialog>
-                                           <AlertDialogTrigger asChild>
-                                                <Button size="sm" variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action cannot be undone. This will permanently delete this record.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => {
-                                                        setItemToDelete({ id: item.id, path: `users/${user?.uid}/qarzs/${item.id}` });
-                                                        handleDelete();
-                                                    }}>Continue</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <DialogTrigger asChild>
+                                            <Button size="sm" variant="outline" onClick={() => setSelectedRecord({...item, type: 'qarz' })}>
+                                                <Eye className="mr-2 h-4 w-4" />Details
+                                            </Button>
+                                        </DialogTrigger>
                                     </div>
                                 </li>
                             ))}
@@ -295,39 +396,18 @@ export default function DashboardPage() {
                      ) : sortedAmanat && sortedAmanat.length > 0 ? (
                         <ul className="space-y-2 pt-4">
                             {sortedAmanat.map((item) => (
-                               <li key={item.id} className="p-3 border rounded-lg flex justify-between items-center">
+                               <li key={item.id} className="p-3 border rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                     <div className="flex flex-col">
                                         <span>{item.item} entrusted to {item.entrustee}</span>
                                         <span className="text-muted-foreground text-xs">Return: {item.returnDate}</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap justify-end gap-2 items-center w-full sm:w-auto">
                                         <Badge className={cn(item.status === 'Entrusted' ? 'bg-orange-500' : 'bg-primary', 'text-white')}>{item.status}</Badge>
-                                        {item.status === 'Entrusted' ? (
-                                            <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(`users/${user?.uid}/amanats/${item.id}`, 'Returned')}><CheckCircle className="mr-2 h-4 w-4" />Mark as Returned</Button>
-                                        ) : (
-                                            <Button size="sm" disabled><CheckCircle className="mr-2 h-4 w-4" />Returned</Button>
-                                        )}
-                                        {item.status === 'Entrusted' && <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/amanat?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>}
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button size="sm" variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action cannot be undone. This will permanently delete this record.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => {
-                                                        setItemToDelete({ id: item.id, path: `users/${user?.uid}/amanats/${item.id}` });
-                                                        handleDelete();
-                                                    }}>Continue</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <DialogTrigger asChild>
+                                            <Button size="sm" variant="outline" onClick={() => setSelectedRecord({...item, type: 'amanat' })}>
+                                                <Eye className="mr-2 h-4 w-4" />Details
+                                            </Button>
+                                        </DialogTrigger>
                                     </div>
                                 </li>
                             ))}
@@ -341,9 +421,26 @@ export default function DashboardPage() {
                 </Tabs>
             </CardContent>
         </Card>
+        {renderRecordDetails()}
+        </Dialog>
       </section>
     </div>
-    {/* This single dialog is now removed, as each item will have its own */}
+    <AlertDialog open={!!recordToUpdate}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+          <AlertDialogDescription>
+            Do you really want to mark this record as {recordToUpdate?.newStatus}? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setRecordToUpdate(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleStatusUpdate}>Confirm</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
+
+    
