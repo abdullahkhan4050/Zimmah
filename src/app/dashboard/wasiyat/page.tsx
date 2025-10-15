@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { collection, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, getDoc } from "firebase/firestore";
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,7 @@ export default function WasiyatPage() {
   const draftContainerRef = useRef<HTMLDivElement>(null);
   const [existingWill, setExistingWill] = useState<WasiyatDoc | null>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const wasiyatId = searchParams.get('id');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -170,8 +171,7 @@ export default function WasiyatPage() {
     addDoc(collectionRef, wasiyatData)
       .then((docRef) => {
           toast({
-            title: "Will Saved",
-            description: `Your ${type}-created will has been saved to your vault.`,
+            title: "Will Saved"
           });
           setExistingWill({ id: docRef.id, ...wasiyatData });
           setWillDraft(content);
