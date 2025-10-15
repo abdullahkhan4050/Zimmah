@@ -170,6 +170,8 @@ export default function DashboardPage() {
         const isQarz = selectedRecord.type === 'qarz';
         const isPending = isQarz ? selectedRecord.status === 'Pending' : selectedRecord.status === 'Entrusted';
         const newStatus = isQarz ? 'Paid' : 'Returned';
+        const statusText = isQarz ? (isPending ? "Pending Payment" : "Paid in Full") : selectedRecord.status;
+
 
         return (
             <DialogContent>
@@ -197,7 +199,7 @@ export default function DashboardPage() {
                         <div className="grid grid-cols-2"><strong>Return Date:</strong> <span>{selectedRecord.returnDate}</span></div>
                         </>
                     )}
-                     <div className="grid grid-cols-2"><strong>Status:</strong> <Badge className={cn(isPending ? 'bg-orange-500' : 'bg-primary', 'text-white w-fit')}>{selectedRecord.status}</Badge></div>
+                     <div className="grid grid-cols-2"><strong>Status:</strong> <Badge className={cn(isPending ? 'bg-orange-500 text-primary-foreground' : 'bg-primary text-primary-foreground', 'w-fit')}>{statusText}</Badge></div>
                       {selectedRecord.witnesses && selectedRecord.witnesses.length > 0 && (
                         <div>
                             <strong>Witnesses:</strong>
@@ -371,7 +373,7 @@ export default function DashboardPage() {
                                         <span className="text-muted-foreground text-xs">Due: {item.dueDate}</span>
                                     </div>
                                     <div className="flex flex-wrap justify-end gap-2 items-center w-full sm:w-auto">
-                                        <Badge className={cn(item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary text-primary-foreground')}>{item.status === 'Pending' ? 'Pending Payment' : 'Paid in Full'}</Badge>
+                                        <Badge className={cn(item.status === 'Pending' ? 'bg-orange-500 text-primary-foreground' : 'bg-primary text-primary-foreground')}>{item.status === 'Pending' ? 'Pending Payment' : 'Paid in Full'}</Badge>
                                         <DialogTrigger asChild>
                                             <Button size="sm" variant="outline" onClick={() => setSelectedRecord({...item, type: 'qarz' })}>
                                                 <Eye className="mr-2 h-4 w-4" />Details
@@ -402,7 +404,7 @@ export default function DashboardPage() {
                                         <span className="text-muted-foreground text-xs">Return: {item.returnDate}</span>
                                     </div>
                                     <div className="flex flex-wrap justify-end gap-2 items-center w-full sm:w-auto">
-                                        <Badge className={cn(item.status === 'Entrusted' ? 'bg-orange-500 text-white' : 'bg-primary text-primary-foreground')}>{item.status}</Badge>
+                                        <Badge className={cn(item.status === 'Entrusted' ? 'bg-orange-500 text-primary-foreground' : 'bg-primary text-primary-foreground')}>{item.status}</Badge>
                                         <DialogTrigger asChild>
                                             <Button size="sm" variant="outline" onClick={() => setSelectedRecord({...item, type: 'amanat' })}>
                                                 <Eye className="mr-2 h-4 w-4" />Details
@@ -442,5 +444,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
