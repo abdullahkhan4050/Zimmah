@@ -185,7 +185,7 @@ export default function ProfilePage() {
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20">
-                            <AvatarImage src={avatarPreview || user?.photoURL || `https://api.dicebear.com/8.x/initials/svg?seed=${currentUser.email}`} alt={currentUser.fullName} />
+                            <AvatarImage src={avatarPreview || user?.photoURL || undefined} alt={currentUser.fullName} />
                             <AvatarFallback>{userInitials}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-1">
