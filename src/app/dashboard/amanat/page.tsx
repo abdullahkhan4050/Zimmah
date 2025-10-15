@@ -119,8 +119,7 @@ export default function AmanatPage() {
   async function onSubmit(data: z.infer<typeof amanatSchema>) {
     if (!firestore || !user) {
         toast({
-            title: "Error",
-            description: "You must be logged in to manage Amanat records.",
+            title: "You must be logged in to manage Amanat records.",
             variant: "destructive",
         });
         return;
@@ -139,8 +138,7 @@ export default function AmanatPage() {
       updateDoc(docRef, amanatData)
       .then(() => {
           toast({
-              title: "Amanat Updated",
-              description: "The entrusted item has been successfully updated.",
+              title: "The entrusted item has been successfully updated",
           });
           router.push('/dashboard');
       })
@@ -161,8 +159,7 @@ export default function AmanatPage() {
       addDoc(collectionRef, amanatData)
       .then(() => {
           toast({
-              title: "Amanat Recorded",
-              description: "The entrusted item has been successfully recorded.",
+              title: "The entrusted item has been successfully recorded",
           });
           form.reset();
           setSelectedWitnesses([]);
