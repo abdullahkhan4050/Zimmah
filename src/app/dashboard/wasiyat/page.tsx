@@ -171,7 +171,8 @@ export default function WasiyatPage() {
     addDoc(collectionRef, wasiyatData)
       .then((docRef) => {
           toast({
-            title: "Will Saved"
+            title: "Will Saved",
+            description: `Your ${type}-created will has been saved to your vault.`,
           });
           setExistingWill({ id: docRef.id, ...wasiyatData });
           setWillDraft(content);
