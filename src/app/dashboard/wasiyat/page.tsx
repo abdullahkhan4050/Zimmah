@@ -6,7 +6,7 @@ import { FileText, Lightbulb, UserCheck, Share2, Printer, Sparkles, AlertTriangl
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { collection, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, getDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, orderBy, deleteDoc, doc, updateDoc, getDoc, getDocs, writeBatch } from "firebase/firestore";
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from "next/link";
 
@@ -129,26 +129,24 @@ export default function WasiyatPage() {
   async function onAiSubmit(data: z.infer<typeof wasiyatSchema>) {
     startTransition(async () => {
         const result = await generateWillAction(data);
-        if(result.success && result.data) {
-            setWillDraft(result.data.willDraft);
-            setEditedWill(result.data.willDraft);
-            setIsEditing(false); // Start in view mode, not edit mode
+        if(result.success && result.data?.willDraft) {
+            await handleSaveWill(result.data.willDraft, 'ai', true);
             toast({
-                title: "Will Draft Generated",
-                description: "Review your draft below. You can edit it before saving.",
+                title: "Will Draft Generated & Saved",
+                description: "Review your saved draft below. You can edit it if needed.",
             });
             scrollToDraft();
         } else {
              toast({
-                title: "Error",
-                description: result.error,
+                title: "Error Generating Will",
+                description: result.error || "An unknown error occurred.",
                 variant: "destructive"
             });
         }
     });
   }
 
-  async function handleSaveWill(content: string, type: 'ai' | 'manual') {
+  async function handleSaveWill(content: string, type: 'ai' | 'manual', isNewGeneration: boolean = false) {
     if (!content || !firestore || !user) {
       toast({
         title: "Error",
@@ -167,25 +165,35 @@ export default function WasiyatPage() {
     
     const collectionPath = `users/${user.uid}/wasiyats`;
     const collectionRef = collection(firestore, collectionPath);
+    
+    try {
+        // If it's a new generation, we delete existing wills first to avoid duplicates.
+        if (isNewGeneration) {
+            const querySnapshot = await getDocs(collectionRef);
+            const batch = writeBatch(firestore);
+            querySnapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+        }
 
-    addDoc(collectionRef, wasiyatData)
-      .then((docRef) => {
-          toast({
+        const docRef = await addDoc(collectionRef, wasiyatData);
+        toast({
             title: "Will Saved",
             description: `Your ${type}-created will has been saved to your vault.`,
-          });
-          setExistingWill({ id: docRef.id, ...wasiyatData });
-          setWillDraft(content);
-          setEditedWill(content);
-          setIsEditing(false);
-      })
-      .catch((error) => {
-          errorEmitter.emit("permission-error", new FirestorePermissionError({
+        });
+        setExistingWill({ id: docRef.id, ...wasiyatData });
+        setWillDraft(content);
+        setEditedWill(content);
+        setIsEditing(false); // Go to view mode after saving
+        setWriteMode(type); // Set write mode to reflect saved will type
+    } catch(error) {
+        errorEmitter.emit("permission-error", new FirestorePermissionError({
             path: collectionRef.path,
-            operation: "create",
+            operation: "write",
             requestResourceData: wasiyatData,
-          }));
-      });
+        }));
+    }
   }
 
    const handleEditSave = async () => {
@@ -359,7 +367,7 @@ export default function WasiyatPage() {
                 </Card>
             )}
 
-            {(writeMode === 'ai' || (isEditing && writeMode === 'ai')) && !willDraft && (
+            {(writeMode === 'ai' || (isEditing && writeMode === 'ai')) && !willDraft && !isPending && (
                 <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
@@ -388,7 +396,7 @@ export default function WasiyatPage() {
                                     )}
                                 />
                                 <Button type="submit" className="w-full" disabled={isPending}>
-                                    {isPending ? "Generating..." : "Generate Will Draft"}
+                                    {isPending ? "Generating..." : "Generate & Save Will"}
                                 </Button>
                             </form>
                         </Form>
@@ -396,7 +404,7 @@ export default function WasiyatPage() {
                 </Card>
             )}
 
-            {(writeMode === 'manual' || (isEditing && writeMode === 'manual')) && !willDraft && (
+            {(writeMode === 'manual' || (isEditing && writeMode === 'manual')) && !willDraft && !isPending && (
                  <Card className="border-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-primary">
@@ -453,13 +461,13 @@ export default function WasiyatPage() {
                     
                     {!isLoading && isPending && <div className="text-center p-8 m-auto">Generating your will draft... <Sparkles className="inline-block animate-pulse" /></div>}
                     
-                    {!isLoading && !willDraft && !isEditing && (
+                    {!isLoading && !willDraft && !isEditing && !isPending && (
                         <div className="m-auto text-center p-8 text-muted-foreground print:hidden">
                            <p>Choose an option to start creating your will, or edit an existing one.</p>
                         </div>
                     )}
 
-                    {(willDraft || isEditing) && !isLoading && (
+                    {(willDraft || isEditing) && !isLoading && !isPending &&(
                         <div className="space-y-6 flex-1 flex flex-col">
                              <Alert variant="destructive" className="print:hidden">
                                 <AlertTriangle className="h-4 w-4" />
@@ -489,8 +497,8 @@ export default function WasiyatPage() {
                                         </>
                                     ) : (
                                         <>
-                                            {!existingWill && willDraft && writeMode === 'ai' && (
-                                                <Button onClick={() => handleSaveWill(willDraft, 'ai')}><Save className="mr-2 h-4 w-4" /> Save AI Draft</Button>
+                                            {existingWill && (
+                                                <Button onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
                                             )}
                                         </>
                                     )}
@@ -561,3 +569,5 @@ export default function WasiyatPage() {
     </div>
   );
 }
+
+    
