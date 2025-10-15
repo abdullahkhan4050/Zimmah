@@ -67,6 +67,10 @@ export default function UsersPage() {
             setUserToDelete(null);
         });
     };
+    
+    const getUserInitials = (name: string) => {
+      return name.split(' ').map(n => n[0]).join('');
+    };
 
     return (
       <>
@@ -116,7 +120,7 @@ export default function UsersPage() {
                                         <div className="flex items-center gap-4">
                                             <Avatar>
                                                 <AvatarImage src={user.avatar} />
-                                                <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+                                                <AvatarFallback>{getUserInitials(user.fullName)}</AvatarFallback>
                                             </Avatar>
                                             <div>
                                                 <div className="font-medium">{user.fullName}</div>
