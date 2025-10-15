@@ -35,20 +35,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 type Witness = { id: string; name: string; cnic: string; };
 
-const witnessSchema = z.object({
-  id: z.string(),
-  name: z.string().min(2, "Witness name is required."),
-  cnic: z.string().optional(),
-  email: z.string().email("Invalid email.").optional().or(z.literal("")),
-});
-
 const qarzSchema = z.object({
   debtor: z.string().min(1, "Debtor name is required.").min(3, "Debtor name must be at least 3 characters."),
   creditor: z.string().min(1, "Creditor name is required.").min(3, "Creditor name must be at least 3 characters."),
   amount: z.coerce.number().positive("Amount must be positive."),
   startDate: z.date({ required_error: "Start date is required." }),
   dueDate: z.date({ required_error: "Due date is required." }),
-  witnesses: z.array(witnessSchema).optional(),
+  witnesses: z.array(z.any()).optional(),
   status: z.enum(["Pending", "Paid"]).default("Pending"),
 });
 
@@ -120,8 +113,7 @@ export default function QarzPage() {
   async function onSubmit(data: z.infer<typeof qarzSchema>) {
     if (!user || !firestore) {
       toast({
-        title: "Authentication Error",
-        description: "You must be logged in to manage a Qarz.",
+        title: "You must be logged in",
         variant: "destructive",
       });
       return;
@@ -141,8 +133,7 @@ export default function QarzPage() {
       updateDoc(docRef, qarzData)
       .then(() => {
           toast({
-            title: "Qarz Updated",
-            description: "The debt record has been successfully updated.",
+            title: "The debt record has been successfully updated",
           });
           router.push('/dashboard');
       })
@@ -162,8 +153,7 @@ export default function QarzPage() {
       addDoc(collectionRef, qarzData)
         .then(() => {
           toast({
-            title: "Qarz Recorded",
-            description: "The debt has been successfully recorded.",
+            title: "The debt has been successfully recorded",
           });
           form.reset();
           setSelectedWitnesses([]);
@@ -444,3 +434,5 @@ export default function QarzPage() {
     </div>
   );
 }
+
+    
