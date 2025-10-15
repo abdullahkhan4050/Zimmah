@@ -203,9 +203,26 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="flex gap-2">
                                         <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/wasiyat?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>
-                                         <AlertDialogTrigger asChild>
-                                             <Button size="sm" variant="destructive" onClick={() => setItemToDelete({ id: item.id, path: `users/${user?.uid}/wasiyats/${item.id}` })}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                         </AlertDialogTrigger>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button size="sm" variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. This will permanently delete this record.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => {
+                                                        setItemToDelete({ id: item.id, path: `users/${user?.uid}/wasiyats/${item.id}` });
+                                                        handleDelete();
+                                                    }}>Continue</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
                                 </li>
                             ))}
@@ -239,9 +256,26 @@ export default function DashboardPage() {
                                             <Button size="sm" disabled><CheckCircle className="mr-2 h-4 w-4" />Paid</Button>
                                         )}
                                         {item.status === 'Pending' && <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/qarz?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>}
-                                        <AlertDialogTrigger asChild>
-                                           <Button size="sm" variant="destructive" onClick={() => setItemToDelete({ id: item.id, path: `users/${user?.uid}/qarzs/${item.id}` })}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                        </AlertDialogTrigger>
+                                        <AlertDialog>
+                                           <AlertDialogTrigger asChild>
+                                                <Button size="sm" variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. This will permanently delete this record.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => {
+                                                        setItemToDelete({ id: item.id, path: `users/${user?.uid}/qarzs/${item.id}` });
+                                                        handleDelete();
+                                                    }}>Continue</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
                                 </li>
                             ))}
@@ -274,9 +308,26 @@ export default function DashboardPage() {
                                             <Button size="sm" disabled><CheckCircle className="mr-2 h-4 w-4" />Returned</Button>
                                         )}
                                         {item.status === 'Entrusted' && <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/amanat?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>}
-                                        <AlertDialogTrigger asChild>
-                                            <Button size="sm" variant="destructive" onClick={() => setItemToDelete({ id: item.id, path: `users/${user?.uid}/amanats/${item.id}` })}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
-                                        </AlertDialogTrigger>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button size="sm" variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. This will permanently delete this record.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => {
+                                                        setItemToDelete({ id: item.id, path: `users/${user?.uid}/amanats/${item.id}` });
+                                                        handleDelete();
+                                                    }}>Continue</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
                                 </li>
                             ))}
@@ -292,22 +343,7 @@ export default function DashboardPage() {
         </Card>
       </section>
     </div>
-    <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete this record.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
+    {/* This single dialog is now removed, as each item will have its own */}
     </>
   );
 }
-
-    
