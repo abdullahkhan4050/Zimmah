@@ -43,7 +43,7 @@ const witnessSchema = z.object({
 });
 
 const qarzSchema = z.object({
-  debtor: z.string().min(3, "Debtor name must be at least 3 characters."),
+  debtor: z.string().min(1, "Debtor name is required.").min(3, "Debtor name must be at least 3 characters."),
   creditor: z.string().min(1, "Creditor name is required.").min(3, "Creditor name must be at least 3 characters."),
   amount: z.coerce.number().positive("Amount must be positive."),
   startDate: z.date({ required_error: "Start date is required." }),
@@ -314,7 +314,11 @@ export default function QarzPage() {
                               onSelect={field.onChange}
                               disabled={(date) => {
                                 const startDate = form.getValues("startDate");
-                                return startDate ? date < startDate : date < new Date();
+                                if (!startDate) return date < new Date();
+                                // Set hours to 0 to compare dates only
+                                const start = new Date(startDate);
+                                start.setHours(0, 0, 0, 0);
+                                return date < start;
                               }}
                               initialFocus
                             />
@@ -440,5 +444,3 @@ export default function QarzPage() {
     </div>
   );
 }
-
-    
