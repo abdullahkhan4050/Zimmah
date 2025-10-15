@@ -6,6 +6,8 @@ import {
   BookOpen,
   HeartHandshake,
   Edit,
+  Trash2,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -28,13 +30,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useEffect, useState, useMemo } from "react";
-import { collection, orderBy, query, where } from "firebase/firestore";
+import { useState, useMemo } from "react";
+import { collection, orderBy, query, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { useCollection, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 
 type Wasiyat = { id: string; will: string; type: string; createdAt: any };
@@ -47,6 +52,9 @@ export default function DashboardPage() {
     const userName = user?.displayName || "User";
     const firestore = useFirestore();
     const router = useRouter();
+    const { toast } = useToast();
+    const [itemToDelete, setItemToDelete] = useState<{ id: string; path: string } | null>(null);
+
 
     const wasiyatQuery = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
@@ -87,7 +95,50 @@ export default function DashboardPage() {
 
     const loading = wasiyatLoading || qarzLoading || amanatLoading;
 
+    const handleStatusUpdate = async (path: string, newStatus: string) => {
+        if (!firestore) return;
+        const docRef = doc(firestore, path);
+        const updateData = { status: newStatus };
+        updateDoc(docRef, updateData)
+        .then(() => {
+            toast({
+                title: "Status Updated",
+                description: "Record status updated successfully ✅",
+            });
+        })
+        .catch(error => {
+             errorEmitter.emit("permission-error", new FirestorePermissionError({
+                path: docRef.path,
+                operation: "update",
+                requestResourceData: updateData,
+            }));
+        });
+    };
+
+    const handleDelete = async () => {
+        if (!itemToDelete || !firestore) return;
+        const { path } = itemToDelete;
+        const docRef = doc(firestore, path);
+        deleteDoc(docRef)
+        .then(() => {
+            toast({
+                title: "Record Deleted",
+                description: "The record has been successfully deleted.",
+            });
+        })
+        .catch(error => {
+            errorEmitter.emit("permission-error", new FirestorePermissionError({
+                path: docRef.path,
+                operation: "delete",
+            }));
+        })
+        .finally(() => {
+            setItemToDelete(null);
+        });
+    };
+
   return (
+    <>
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-2xl md:text-3xl font-bold font-headline tracking-tight text-primary">
@@ -145,32 +196,17 @@ export default function DashboardPage() {
                     ) : wasiyat && wasiyat.length > 0 ? (
                         <ul className="space-y-2 pt-4">
                             {wasiyat.map((item) => (
-                                <li key={item.id}>
-                                     <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-between">
-                                                <span>Will created via {item.type} mode</span>
-                                                <span className="text-muted-foreground text-xs">{item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString() : ''}</span>
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Will Details</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This is the content of your saved will.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                                <div className="font-body whitespace-pre-wrap p-4 bg-muted/50 rounded-md border text-sm max-h-[50vh] overflow-y-auto">
-                                                    {item.will}
-                                                </div>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => router.push(`/dashboard/wasiyat?id=${item.id}`)}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                <li key={item.id} className="p-3 border rounded-lg flex justify-between items-center">
+                                    <div>
+                                        <p>Will created via {item.type} mode</p>
+                                        <p className="text-muted-foreground text-xs">{item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString() : ''}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/wasiyat?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>
+                                         <AlertDialogTrigger asChild>
+                                             <Button size="sm" variant="destructive" onClick={() => setItemToDelete({ id: item.id, path: `users/${user?.uid}/wasiyats/${item.id}` })}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
+                                         </AlertDialogTrigger>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
@@ -190,39 +226,23 @@ export default function DashboardPage() {
                      ) : sortedQarz && sortedQarz.length > 0 ? (
                          <ul className="space-y-2 pt-4">
                             {sortedQarz.map((item) => (
-                                <li key={item.id}>
-                                     <AlertDialog>
+                                <li key={item.id} className="p-3 border rounded-lg flex justify-between items-center">
+                                    <div className="flex flex-col">
+                                        <span>Debt of {item.amount} from {item.debtor} to {item.creditor}</span>
+                                        <span className="text-muted-foreground text-xs">Due: {item.dueDate}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge className={cn(item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary', 'text-white')}>{item.status}</Badge>
+                                        {item.status === 'Pending' ? (
+                                            <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(`users/${user?.uid}/qarzs/${item.id}`, 'Paid')}><CheckCircle className="mr-2 h-4 w-4" />Mark as Paid</Button>
+                                        ) : (
+                                            <Button size="sm" disabled><CheckCircle className="mr-2 h-4 w-4" />Paid</Button>
+                                        )}
+                                        {item.status === 'Pending' && <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/qarz?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>}
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-between h-auto py-2">
-                                                <div className="flex flex-col items-start text-left">
-                                                    <span>Debt of {item.amount} from {item.debtor} to {item.creditor}</span>
-                                                    <span className="text-muted-foreground text-xs">Due: {item.dueDate}</span>
-                                                </div>
-                                                <Badge className={cn(
-                                                    item.status === 'Pending' ? 'bg-orange-500' : 'bg-primary',
-                                                    'text-white'
-                                                )}>{item.status}</Badge>
-                                            </Button>
+                                           <Button size="sm" variant="destructive" onClick={() => setItemToDelete({ id: item.id, path: `users/${user?.uid}/qarzs/${item.id}` })}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
                                         </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Qarz Details</AlertDialogTitle>
-                                            </AlertDialogHeader>
-                                            <div className="text-sm space-y-2">
-                                                <p><strong>Amount:</strong> {item.amount}</p>
-                                                <p><strong>Debtor:</strong> {item.debtor}</p>
-                                                <p><strong>Creditor:</strong> {item.creditor}</p>
-                                                <p><strong>Due Date:</strong> {item.dueDate}</p>
-                                                <p><strong>Status:</strong> {item.status}</p>
-                                            </div>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => router.push(`/dashboard/qarz?id=${item.id}`)}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
@@ -241,39 +261,23 @@ export default function DashboardPage() {
                      ) : sortedAmanat && sortedAmanat.length > 0 ? (
                         <ul className="space-y-2 pt-4">
                             {sortedAmanat.map((item) => (
-                               <li key={item.id}>
-                                     <AlertDialog>
+                               <li key={item.id} className="p-3 border rounded-lg flex justify-between items-center">
+                                    <div className="flex flex-col">
+                                        <span>{item.item} entrusted to {item.entrustee}</span>
+                                        <span className="text-muted-foreground text-xs">Return: {item.returnDate}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Badge className={cn(item.status === 'Entrusted' ? 'bg-orange-500' : 'bg-primary', 'text-white')}>{item.status}</Badge>
+                                        {item.status === 'Entrusted' ? (
+                                            <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(`users/${user?.uid}/amanats/${item.id}`, 'Returned')}><CheckCircle className="mr-2 h-4 w-4" />Mark as Returned</Button>
+                                        ) : (
+                                            <Button size="sm" disabled><CheckCircle className="mr-2 h-4 w-4" />Returned</Button>
+                                        )}
+                                        {item.status === 'Entrusted' && <Button size="sm" variant="outline" onClick={() => router.push(`/dashboard/amanat?id=${item.id}`)}><Edit className="mr-2 h-4 w-4" />Edit</Button>}
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-between h-auto py-2">
-                                                <div className="flex flex-col items-start text-left">
-                                                    <span>{item.item} entrusted to {item.entrustee}</span>
-                                                    <span className="text-muted-foreground text-xs">Return: {item.returnDate}</span>
-                                                </div>
-                                                <Badge className={cn(
-                                                    item.status === 'Entrusted' ? 'bg-orange-500' : 'bg-primary',
-                                                    'text-white'
-                                                )}>{item.status}</Badge>
-                                            </Button>
+                                            <Button size="sm" variant="destructive" onClick={() => setItemToDelete({ id: item.id, path: `users/${user?.uid}/amanats/${item.id}` })}><Trash2 className="mr-2 h-4 w-4" />Delete</Button>
                                         </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Amanat Details</AlertDialogTitle>
-                                            </AlertDialogHeader>
-                                             <div className="text-sm space-y-2">
-                                                <p><strong>Item:</strong> {item.item}</p>
-                                                <p><strong>Description:</strong> {item.description}</p>
-                                                <p><strong>Entrustee:</strong> {item.entrustee}</p>
-                                                <p><strong>Return Date:</strong> {item.returnDate}</p>
-                                                <p><strong>Status:</strong> {item.status}</p>
-                                            </div>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => router.push(`/dashboard/amanat?id=${item.id}`)}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
@@ -288,5 +292,22 @@ export default function DashboardPage() {
         </Card>
       </section>
     </div>
+    <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this record.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
+
+    

@@ -285,7 +285,7 @@ export default function AmanatPage() {
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
+                      <FormLabel>Initial Status</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -389,3 +389,5 @@ export default function AmanatPage() {
     </div>
   );
 }
+
+    
